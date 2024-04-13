@@ -1,0 +1,478 @@
+[gd_scene load_steps=2 format=3 uid="uid://fim7aocqhl1u"]
+
+[ext_resource type="Texture2D" uid="uid://d2tn5oasxayna" path="res://Assets/Risk_board.svg.png" id="1_re4t4"]
+
+[node name="GameBoard" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.278431, 0.278431, 0.278431, 1)
+metadata/_edit_lock_ = true
+
+[node name="Map" type="Sprite2D" parent="."]
+position = Vector2(933, 543)
+scale = Vector2(2.284, 1.74976)
+texture = ExtResource("1_re4t4")
+metadata/_edit_lock_ = true
+
+[node name="Connections" type="Node2D" parent="."]
+
+[node name="AlaskaKamchatka" type="Line2D" parent="Connections"]
+points = PackedVector2Array(138, 251, -71, 251)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="NWTerritoryGreenland" type="Line2D" parent="Connections"]
+points = PackedVector2Array(517, 210, 605, 195)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="OntarioGreenland" type="Line2D" parent="Connections"]
+points = PackedVector2Array(451, 282, 604, 195)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="QuebecGreenland" type="Line2D" parent="Connections"]
+points = PackedVector2Array(568, 264, 606, 194)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="GreenlandIceland" type="Line2D" parent="Connections"]
+points = PackedVector2Array(720, 225, 774, 258)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="BrazilNAfrica" type="Line2D" parent="Connections"]
+points = PackedVector2Array(717, 647, 782, 633)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="IcelandScandanavia" type="Line2D" parent="Connections"]
+points = PackedVector2Array(829, 287, 882, 313)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="GreatBritainIceland" type="Line2D" parent="Connections"]
+points = PackedVector2Array(799, 324, 832, 290)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="GreatBritainScandanavia" type="Line2D" parent="Connections"]
+points = PackedVector2Array(800, 324, 886, 314)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="GreatBritainNEurope" type="Line2D" parent="Connections"]
+points = PackedVector2Array(801, 325, 884, 375)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="GreatBritainWEurope" type="Line2D" parent="Connections"]
+points = PackedVector2Array(793, 409, 815, 433)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="NEuropeScandanavia" type="Line2D" parent="Connections"]
+points = PackedVector2Array(883, 372, 885, 310)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="SEuropeEgypt" type="Line2D" parent="Connections"]
+points = PackedVector2Array(978, 530, 980, 562)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="SAfricaMadagascar" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1082, 863, 1139, 834)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="EAfricaMiddleE" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1105, 659, 1128, 632)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="EAfricaMadagascar" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1116, 750, 1138, 833)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="KamchatkaAlaska" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1625, 263, 1947, 263)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="KamchatkaJapan" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1571, 360, 1623, 394)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="MongoliaJapan" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1550, 406, 1622, 395)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="SiamIndonesia" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1502, 636, 1520, 680)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="IndonesiaNewGuinea" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1519, 682, 1571, 687)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="IndonesiaWAustralia" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1543, 758, 1575, 776)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="WAustraliaNewGuinea" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1572, 775, 1571, 688)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="NewGuineaEAustralia" type="Line2D" parent="Connections"]
+points = PackedVector2Array(1569, 686, 1606, 756)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
+
+[node name="NAmerica" type="Node2D" parent="."]
+position = Vector2(379, 192)
+
+[node name="AlaskaLabel" type="Label" parent="NAmerica"]
+offset_left = -191.0
+offset_top = 27.0
+offset_right = -140.0
+offset_bottom = 50.0
+text = "Alaska"
+
+[node name="NWTerritoryLabel" type="Label" parent="NAmerica"]
+offset_left = -92.0
+offset_top = 30.0
+offset_right = 63.0
+offset_bottom = 53.0
+text = "Northwest Territory"
+
+[node name="AlbertaLabel" type="Label" parent="NAmerica"]
+offset_left = -55.0
+offset_top = 98.0
+offset_right = 2.0
+offset_bottom = 121.0
+text = "Alberta
+"
+
+[node name="WUSLabel" type="Label" parent="NAmerica"]
+offset_left = -79.0
+offset_top = 194.0
+offset_right = 20.0
+offset_bottom = 217.0
+text = "Western U.S."
+
+[node name="EUSLabel" type="Label" parent="NAmerica"]
+offset_left = 47.0
+offset_top = 223.0
+offset_right = 140.0
+offset_bottom = 246.0
+text = "Eastern U.S."
+
+[node name="OntarioLabel" type="Label" parent="NAmerica"]
+offset_left = 50.0
+offset_top = 118.0
+offset_right = 110.0
+offset_bottom = 141.0
+text = "Ontario"
+
+[node name="QuebecLabel" type="Label" parent="NAmerica"]
+offset_left = 162.0
+offset_top = 113.0
+offset_right = 222.0
+offset_bottom = 136.0
+text = "Quebec"
+
+[node name="CentralAmericaLabel" type="Label" parent="NAmerica"]
+offset_left = -49.0
+offset_top = 327.0
+offset_right = 76.0
+offset_bottom = 350.0
+text = "Central America"
+
+[node name="GreenlandLabel" type="Label" parent="NAmerica"]
+offset_left = 252.0
+offset_top = -21.0
+offset_right = 333.0
+offset_bottom = 2.0
+text = "Greenland"
+
+[node name="SAmerica" type="Node2D" parent="."]
+position = Vector2(379, 192)
+
+[node name="VenezuelaLabel" type="Label" parent="SAmerica"]
+offset_left = 71.0
+offset_top = 373.0
+offset_right = 151.0
+offset_bottom = 396.0
+text = "Venezuela"
+
+[node name="PeruLabel" type="Label" parent="SAmerica"]
+offset_left = 115.0
+offset_top = 495.0
+offset_right = 155.0
+offset_bottom = 518.0
+text = "Peru"
+
+[node name="BrazilLabel" type="Label" parent="SAmerica"]
+offset_left = 221.0
+offset_top = 456.0
+offset_right = 265.0
+offset_bottom = 479.0
+text = "Brazil"
+
+[node name="ArgentinaLabel" type="Label" parent="SAmerica"]
+offset_left = 111.0
+offset_top = 591.0
+offset_right = 187.0
+offset_bottom = 614.0
+text = "Argentina"
+
+[node name="Europe" type="Node2D" parent="."]
+position = Vector2(379, 192)
+
+[node name="IcelandLabel" type="Label" parent="Europe"]
+offset_left = 406.0
+offset_top = 68.0
+offset_right = 462.0
+offset_bottom = 91.0
+text = "Iceland"
+
+[node name="GreatBritainLabel" type="Label" parent="Europe"]
+offset_left = 353.0
+offset_top = 168.0
+offset_right = 453.0
+offset_bottom = 191.0
+text = "Great Britain"
+
+[node name="WEuropeLabel" type="Label" parent="Europe"]
+offset_left = 364.0
+offset_top = 296.0
+offset_right = 488.0
+offset_bottom = 319.0
+text = "Western Europe"
+
+[node name="ScandanaviaLabel" type="Label" parent="Europe"]
+offset_left = 515.0
+offset_top = 61.0
+offset_right = 613.0
+offset_bottom = 84.0
+text = "Scandanavia"
+
+[node name="NEuropeLabel" type="Label" parent="Europe"]
+offset_left = 481.0
+offset_top = 177.0
+offset_right = 613.0
+offset_bottom = 200.0
+text = "Northern Europe"
+
+[node name="SEuropeLabel" type="Label" parent="Europe"]
+offset_left = 505.0
+offset_top = 257.0
+offset_right = 636.0
+offset_bottom = 280.0
+text = "Southern Europe"
+
+[node name="UkraineLabel" type="Label" parent="Europe"]
+offset_left = 673.0
+offset_top = 135.0
+offset_right = 735.0
+offset_bottom = 158.0
+text = "Ukraine"
+
+[node name="Africa" type="Node2D" parent="."]
+position = Vector2(379, 192)
+
+[node name="NAfricaLabel" type="Label" parent="Africa"]
+offset_left = 446.0
+offset_top = 430.0
+offset_right = 541.0
+offset_bottom = 453.0
+text = "North Africa"
+
+[node name="CongoLabel" type="Label" parent="Africa"]
+offset_left = 601.0
+offset_top = 535.0
+offset_right = 650.0
+offset_bottom = 558.0
+text = "Congo"
+
+[node name="SAfricaLabel" type="Label" parent="Africa"]
+offset_left = 588.0
+offset_top = 648.0
+offset_right = 683.0
+offset_bottom = 671.0
+text = "South Africa"
+
+[node name="EgyptLabel" type="Label" parent="Africa"]
+offset_left = 595.0
+offset_top = 388.0
+offset_right = 638.0
+offset_bottom = 411.0
+text = "Egypt"
+
+[node name="EAfricaLabel" type="Label" parent="Africa"]
+offset_left = 649.0
+offset_top = 480.0
+offset_right = 731.0
+offset_bottom = 503.0
+text = "East Africa"
+
+[node name="MadagascarLabel" type="Label" parent="Africa"]
+offset_left = 734.0
+offset_top = 659.0
+offset_right = 828.0
+offset_bottom = 682.0
+text = "Madagascar"
+
+[node name="Asia" type="Node2D" parent="."]
+position = Vector2(379, 192)
+
+[node name="UralLabel" type="Label" parent="Asia"]
+offset_left = 857.0
+offset_top = 97.0
+offset_right = 897.0
+offset_bottom = 120.0
+text = "Ural
+"
+
+[node name="AfghanistanLabel" type="Label" parent="Asia"]
+offset_left = 800.0
+offset_top = 221.0
+offset_right = 893.0
+offset_bottom = 244.0
+text = "Afghanistan"
+
+[node name="MiddleELabel" type="Label" parent="Asia"]
+offset_left = 702.0
+offset_top = 333.0
+offset_right = 792.0
+offset_bottom = 356.0
+text = "Middle East"
+
+[node name="SiberiaLabel" type="Label" parent="Asia"]
+offset_left = 931.0
+offset_top = 24.0
+offset_right = 985.0
+offset_bottom = 47.0
+text = "Siberia"
+
+[node name="ChinaLabel" type="Label" parent="Asia"]
+offset_left = 1023.0
+offset_top = 279.0
+offset_right = 1068.0
+offset_bottom = 302.0
+text = "China"
+
+[node name="IndiaLabel" type="Label" parent="Asia"]
+offset_left = 919.0
+offset_top = 338.0
+offset_right = 959.0
+offset_bottom = 361.0
+text = "India"
+
+[node name="YakutskLabel" type="Label" parent="Asia"]
+offset_left = 1053.0
+offset_top = 12.0
+offset_right = 1115.0
+offset_bottom = 35.0
+text = "Yakutsk"
+
+[node name="IrkutskLabel" type="Label" parent="Asia"]
+offset_left = 1030.0
+offset_top = 124.0
+offset_right = 1085.0
+offset_bottom = 147.0
+text = "Irkutsk"
+
+[node name="MongoliaLabel" type="Label" parent="Asia"]
+offset_left = 1049.0
+offset_top = 193.0
+offset_right = 1121.0
+offset_bottom = 216.0
+text = "Mongolia"
+
+[node name="SiamLabel" type="Label" parent="Asia"]
+offset_left = 1051.0
+offset_top = 381.0
+offset_right = 1091.0
+offset_bottom = 404.0
+text = "Siam
+"
+
+[node name="KamchatkaLabel" type="Label" parent="Asia"]
+offset_left = 1179.0
+offset_top = 18.0
+offset_right = 1266.0
+offset_bottom = 41.0
+text = "Kamchatka"
+
+[node name="JapanLabel" type="Label" parent="Asia"]
+offset_left = 1235.0
+offset_top = 206.0
+offset_right = 1279.0
+offset_bottom = 229.0
+text = "Japan"
+
+[node name="Australia" type="Node2D" parent="."]
+position = Vector2(379, 192)
+
+[node name="IndonesiaLabel" type="Label" parent="Australia"]
+offset_left = 1075.0
+offset_top = 514.0
+offset_right = 1151.0
+offset_bottom = 537.0
+text = "Indonesia"
+
+[node name="WAustraliaLabel" type="Label" parent="Australia"]
+offset_left = 1112.0
+offset_top = 658.0
+offset_right = 1251.0
+offset_bottom = 681.0
+text = "Western Australia"
+
+[node name="NewGuineaLabel" type="Label" parent="Australia"]
+offset_left = 1201.0
+offset_top = 488.0
+offset_right = 1295.0
+offset_bottom = 511.0
+text = "New Guinea"
+
+[node name="EAustraliaLabel" type="Label" parent="Australia"]
+offset_left = 1230.0
+offset_top = 609.0
+offset_right = 1362.0
+offset_bottom = 632.0
+text = "Eastern Australia"
