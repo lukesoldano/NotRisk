@@ -1,5 +1,5 @@
 ea4bc82a6ad023ab7ee23ee620429895
-::res://::1713025233
+::res://::1713054133
 ::res://Assets/::1713025861
 Risk_board.svg.png::CompressedTexture2D::9094427637531927754::1713025857::1713025861::1::::<><>::
 ::res://Assets/kenney_boardgame-pack/::1713024764
@@ -588,6 +588,13 @@ piecesWhite.svg::CompressedTexture2D::8662602066439982227::1713024713::171302476
 piecesYellow.svg::CompressedTexture2D::9095400938481249563::1713024713::1713024764::1::::<><>::
 playingCards.svg::CompressedTexture2D::3977565366173655269::1713024713::1713024764::1::::<><>::
 playingCards_back.svg::CompressedTexture2D::6190430114475045962::1713024713::1713024764::1::::<><>::
-::res://Scenes/::1713027280
-game.tscn::PackedScene::368245011280597164::1713027280::0::1::::<><>::uid://d2tn5oasxayna::::res://Assets/Risk_board.svg.png
-::res://Scripts/::1713024687
+::res://Scenes/::1713054133
+Country.gd::GDScript::-1::1713053294::0::1::::<>Node2D<>::
+country.tscn::PackedScene::3793652244648066002::1713054136::0::1::::<><>::res://Scenes/Country.gd<>uid://bsuc30gsicn62::::res://Scenes/occupation_widget.tscn
+game_board.gd::GDScript::-1::1713052065::0::1::::<>Node2D<>::
+game_board.tscn::PackedScene::368245011280597164::1713054133::0::1::::<><>::res://Scenes/game_board.gd<>uid://d2tn5oasxayna::::res://Assets/Risk_board.svg.png<>uid://bubw5slieg3ja::::res://Scenes/country.tscn
+occupation_widget.gd::GDScript::-1::1713050245::0::1::::<>Node2D<>::
+occupation_widget.tscn::PackedScene::3691280183654952637::1713054119::0::1::::<><>::res://Scenes/occupation_widget.gd
+::res://Scripts/::1713054100
+constants.gd::GDScript::-1::1713053726::0::1::::Constants<>RefCounted<>::
+game_engine.gd::GDScript::-1::1713054046::0::1::::<>Node<>::

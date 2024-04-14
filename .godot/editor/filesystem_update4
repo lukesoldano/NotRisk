@@ -1,2 +1,16 @@
 res://Scenes/game.tscn
 res://Scenes/game_board.tscn
+res://Scenes/OccupationWidget.tscn
+res://Scenes/OccupationWidget.gd
+res://Scenes/Country.tscn
+res://Scenes/GameBoard.tscn
+res://Scenes/GameBoard.gd
+res://Scenes/Country.gd
+res://Scripts/Constants.gd
+res://Scenes/occupation_widget.tscn
+res://Scenes/country.tscn
+res://Scripts/game_engine.gd
+res://Scenes/game_board.gd
+res://Scenes/occupation_widget.gd
+res://Scripts/constants.gd
+res://Scripts/types.gd
