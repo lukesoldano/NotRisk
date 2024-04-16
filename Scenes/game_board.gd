@@ -1,4 +1,8 @@
+@icon("res://Assets/NodeIcons/GameBoard.svg")
+
 extends Node2D
+
+class_name GameBoard
 
 signal next_phase_requested()
 
@@ -83,22 +87,7 @@ func __validate_borders():
          assert(self.__country_node_map[neighbor].neighbors.count(country) != 0, "Neighbor does not have country as one if its neighbors!")
 
 func _on_turn_phase_updated(player: Types.Player, phase: Types.TurnPhase) -> void:
-   var message = "Player: " + player.user_name + " - Phase: "
-   match phase:
-      Types.TurnPhase.START:
-         message += "START"
-      Types.TurnPhase.DEPLOY:
-         message += "DEPLOY"
-      Types.TurnPhase.ATTACK:
-         message += "ATTACK"
-      Types.TurnPhase.REINFORCE:
-         message += "REINFORCE"
-      Types.TurnPhase.END:
-         message += "END"
-      _:
-         assert(false, "Invalid turn phase provided!")
-         
-   $Temp/PhaseInfoLabel.text = message
+   $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + str(phase)
 
 func _on_next_phase_button_pressed() -> void:
    Logger.log_message("Next phase requested")

@@ -1,10 +1,5 @@
 res://Scenes/game_engine.tscn
 res://Scenes/game_board.tscn
-res://Scenes/game_board.gd
 res://Scenes/country.tscn
 res://Scenes/occupation_widget.tscn
-res://Scripts/types.gd
-res://Scenes/game_engine.gd
-res://Scripts/logger.gd
-res://Scenes/country.gd
-res://Scripts/constants.gd
+res://Scenes/occupation_widget.gd

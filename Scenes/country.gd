@@ -1,4 +1,8 @@
+@icon("res://Assets/NodeIcons/Country.svg")
+
 extends Node2D
+
+class_name Country
 
 @export var country_label: String = ""
 @export var neighbors: Array[Types.Country] = []
