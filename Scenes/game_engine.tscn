@@ -1,0 +1,92 @@
+[gd_scene load_steps=13 format=3 uid="uid://c7hgbaejve0so"]
+
+[ext_resource type="Script" path="res://Scenes/game_engine.gd" id="1_clvx5"]
+[ext_resource type="PackedScene" uid="uid://fim7aocqhl1u" path="res://Scenes/game_board.tscn" id="2_qathn"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/state_chart.gd" id="2_xewfj"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/compound_state.gd" id="3_8tfo1"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/atomic_state.gd" id="4_xadjy"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/transition.gd" id="5_bpogy"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/state_is_active_guard.gd" id="6_edvsf"]
+
+[sub_resource type="Resource" id="Resource_cshky"]
+script = ExtResource("6_edvsf")
+state = NodePath("..")
+
+[sub_resource type="Resource" id="Resource_yj2o8"]
+script = ExtResource("6_edvsf")
+state = NodePath("..")
+
+[sub_resource type="Resource" id="Resource_fx5cs"]
+script = ExtResource("6_edvsf")
+state = NodePath("..")
+
+[sub_resource type="Resource" id="Resource_7gqfi"]
+script = ExtResource("6_edvsf")
+state = NodePath("..")
+
+[sub_resource type="Resource" id="Resource_tucjx"]
+script = ExtResource("6_edvsf")
+state = NodePath("..")
+
+[node name="GameEngine" type="Node"]
+script = ExtResource("1_clvx5")
+
+[node name="GameBoard" parent="." instance=ExtResource("2_qathn")]
+
+[node name="PlayerTurnStateMachine" type="Node" parent="."]
+script = ExtResource("2_xewfj")
+
+[node name="Phase" type="Node" parent="PlayerTurnStateMachine"]
+script = ExtResource("3_8tfo1")
+initial_state = NodePath("Start")
+
+[node name="Start" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("4_xadjy")
+
+[node name="ToDeploy" type="Node" parent="PlayerTurnStateMachine/Phase/Start"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Deploy")
+event = &"StartToDeploy"
+guard = SubResource("Resource_cshky")
+
+[node name="Deploy" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("4_xadjy")
+
+[node name="ToAttack" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Attack")
+event = &"DeployToAttack"
+guard = SubResource("Resource_yj2o8")
+
+[node name="Attack" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("4_xadjy")
+
+[node name="ToReinforce" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Reinforce")
+event = &"AttackToReinforce"
+guard = SubResource("Resource_fx5cs")
+
+[node name="Reinforce" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("4_xadjy")
+
+[node name="ToEnd" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../End")
+event = &"ReinforceToEnd"
+guard = SubResource("Resource_7gqfi")
+
+[node name="End" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("4_xadjy")
+
+[node name="ToStart" type="Node" parent="PlayerTurnStateMachine/Phase/End"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Start")
+event = &"EndToStart"
+guard = SubResource("Resource_tucjx")
+
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Start" to="." method="_on_start_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Deploy" to="." method="_on_deploy_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack" to="." method="_on_attack_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Reinforce" to="." method="_on_reinforce_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/End" to="." method="_on_end_state_entered"]

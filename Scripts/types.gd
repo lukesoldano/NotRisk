@@ -55,3 +55,28 @@ enum Country
    WESTERN_UNITED_STATES = 40,
    YAKUTSK = 41
 }
+
+enum TurnPhase
+{
+   START = 0,
+   DEPLOY = 1,
+   ATTACK = 2,
+   REINFORCE = 3,
+   END = 4
+}
+
+class Player:
+   var user_name: String = "DEFAULT NAME"
+   var army_color: Color = Color.WHITE
+   
+   func _init(i_user_name: String, i_army_color: Color):
+      self.user_name = i_user_name
+      self.army_color = i_army_color
+
+class Deployment:
+   var player: Player = null
+   var troop_count: int = 0
+   
+   func _init(i_player: Player, i_troop_count: int):
+      self.player = i_player
+      self.troop_count = i_troop_count

@@ -11,15 +11,18 @@ config_version=5
 [application]
 
 config/name="NotRisk"
-run/main_scene="res://Scenes/game_board.tscn"
+run/main_scene="res://Scenes/game_engine.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 
 [autoload]
 
-GameBoard="*res://Scenes/game_board.tscn"
-GameEngine="*res://Scripts/game_engine.gd"
+Logger="*res://Scripts/logger.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_state_charts/plugin.cfg")
