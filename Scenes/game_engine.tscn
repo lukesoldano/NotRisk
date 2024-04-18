@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://c7hgbaejve0so"]
+[gd_scene load_steps=14 format=3 uid="uid://c7hgbaejve0so"]
 
 [ext_resource type="Script" path="res://Scenes/game_engine.gd" id="1_clvx5"]
 [ext_resource type="PackedScene" uid="uid://fim7aocqhl1u" path="res://Scenes/game_board.tscn" id="2_qathn"]
@@ -13,6 +13,10 @@ script = ExtResource("6_edvsf")
 state = NodePath("..")
 
 [sub_resource type="Resource" id="Resource_yj2o8"]
+script = ExtResource("6_edvsf")
+state = NodePath("..")
+
+[sub_resource type="Resource" id="Resource_ijk5h"]
 script = ExtResource("6_edvsf")
 state = NodePath("..")
 
@@ -50,7 +54,8 @@ event = &"StartToDeploy"
 guard = SubResource("Resource_cshky")
 
 [node name="Deploy" type="Node" parent="PlayerTurnStateMachine/Phase"]
-script = ExtResource("4_xadjy")
+script = ExtResource("3_8tfo1")
+initial_state = NodePath("Idle")
 
 [node name="ToAttack" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy"]
 script = ExtResource("5_bpogy")
@@ -58,8 +63,48 @@ to = NodePath("../../Attack")
 event = &"DeployToAttack"
 guard = SubResource("Resource_yj2o8")
 
-[node name="Attack" type="Node" parent="PlayerTurnStateMachine/Phase"]
+[node name="Idle" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy"]
 script = ExtResource("4_xadjy")
+
+[node name="ToPlayingCards" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/Idle"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../PlayingCards")
+event = &"IdleToPlayingCards"
+
+[node name="ToDeploying" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/Idle"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Deploying")
+
+[node name="PlayingCards" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy"]
+script = ExtResource("4_xadjy")
+
+[node name="Toidle" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/PlayingCards"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"PlayingCardsToIdle"
+
+[node name="Deploying" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy"]
+script = ExtResource("4_xadjy")
+
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/Deploying"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"DeployingToIdle"
+
+[node name="ToPlayingCards" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/Deploying"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../PlayingCards")
+event = &"DeployingToPlayingCards"
+
+[node name="Attack" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("3_8tfo1")
+initial_state = NodePath("Idle")
+
+[node name="ToDeploy" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Deploy")
+event = &"AttackToDeploy"
+guard = SubResource("Resource_ijk5h")
 
 [node name="ToReinforce" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
 script = ExtResource("5_bpogy")
@@ -67,14 +112,109 @@ to = NodePath("../../Reinforce")
 event = &"AttackToReinforce"
 guard = SubResource("Resource_fx5cs")
 
-[node name="Reinforce" type="Node" parent="PlayerTurnStateMachine/Phase"]
+[node name="Idle" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
 script = ExtResource("4_xadjy")
+
+[node name="ToSourceSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/Idle"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../SourceSelected")
+event = &"IdleToSourceSelected"
+
+[node name="SourceSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+script = ExtResource("4_xadjy")
+
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/SourceSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"SourceSelectedToIdle"
+
+[node name="ToDestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/SourceSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../DestinationSelected")
+event = &"SourceSelectedToDestinationSelected"
+
+[node name="DestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+script = ExtResource("4_xadjy")
+
+[node name="ToSourceSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/DestinationSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../SourceSelected")
+event = &"DestinationSelectedToSourceSelected"
+
+[node name="ToNumAttackersSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/DestinationSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../NumAttackersSelected")
+event = &"DestinationSelectedToNumAttackersSelected"
+
+[node name="NumAttackersSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+script = ExtResource("4_xadjy")
+
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/NumAttackersSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"NumAttackersSelectedToIdle"
+
+[node name="ToDestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/NumAttackersSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../DestinationSelected")
+event = &"NumAttackersSelectedToDestinationSelected"
+
+[node name="ToVictory" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/NumAttackersSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Victory")
+event = &"NumAttackersSelectedToVictory"
+
+[node name="Victory" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+script = ExtResource("4_xadjy")
+
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/Victory"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"VictoryToIdle"
+
+[node name="Reinforce" type="Node" parent="PlayerTurnStateMachine/Phase"]
+script = ExtResource("3_8tfo1")
+initial_state = NodePath("Idle")
 
 [node name="ToEnd" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce"]
 script = ExtResource("5_bpogy")
 to = NodePath("../../End")
 event = &"ReinforceToEnd"
 guard = SubResource("Resource_7gqfi")
+
+[node name="Idle" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce"]
+script = ExtResource("4_xadjy")
+
+[node name="ToSourceSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce/Idle"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../SourceSelected")
+event = &"IdleToSourceSelected"
+
+[node name="SourceSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce"]
+script = ExtResource("4_xadjy")
+
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce/SourceSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"SourceSelectedToIdle"
+
+[node name="ToDestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce/SourceSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../DestinationSelected")
+event = &"SourceSelectedToDestinationSelected"
+
+[node name="DestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce"]
+script = ExtResource("4_xadjy")
+
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce/DestinationSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../Idle")
+event = &"DestinationSelectedToIdle"
+
+[node name="ToSourceSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Reinforce/DestinationSelected"]
+script = ExtResource("5_bpogy")
+to = NodePath("../../SourceSelected")
+event = &"DestinationSelectedToSourceSelected"
 
 [node name="End" type="Node" parent="PlayerTurnStateMachine/Phase"]
 script = ExtResource("4_xadjy")
@@ -88,5 +228,13 @@ guard = SubResource("Resource_tucjx")
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Start" to="." method="_on_start_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Deploy" to="." method="_on_deploy_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack" to="." method="_on_attack_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/Idle" to="." method="_on_attack_idle_state_entered"]
+[connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Attack/Idle" to="." method="_on_attack_idle_state_exited"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/SourceSelected" to="." method="_on_attack_source_selected_state_entered"]
+[connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Attack/SourceSelected" to="." method="_on_attack_source_selected_state_exited"]
+[connection signal="state_input" from="PlayerTurnStateMachine/Phase/Attack/SourceSelected" to="." method="_on_attack_source_selected_state_input"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/DestinationSelected" to="." method="_on_attack_destination_selected_state_entered"]
+[connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Attack/DestinationSelected" to="." method="_on_attack_destination_selected_state_exited"]
+[connection signal="state_input" from="PlayerTurnStateMachine/Phase/Attack/DestinationSelected" to="." method="_on_attack_destination_selected_state_input"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Reinforce" to="." method="_on_reinforce_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/End" to="." method="_on_end_state_entered"]

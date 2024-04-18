@@ -1,11 +1,11 @@
+AtomicState
+CompoundState
 TextureRect
 CollisionShape2D
 Area2D
 Label
 Node2D
 Button
-AtomicState
-CompoundState
 StateChart
 Node
 ColorRect

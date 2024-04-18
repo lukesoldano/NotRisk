@@ -4,6 +4,9 @@ extends Node2D
 
 class_name Country
 
+signal clicked(country: Types.Country, action_tag: String)
+
+@export var country: Types.Country
 @export var country_label: String = ""
 @export var neighbors: Array[Types.Country] = []
 
@@ -20,3 +23,9 @@ func set_deployment(deployment: Types.Deployment) -> void:
    
 func is_neighboring(country: Types.Country) -> bool:
    return self.neighbors.count(country)
+
+func _on_occupation_widget_clicked(action_tag):
+   var message = Types.Country.keys()[country] + ": was clicked with type: " + action_tag
+   Logger.log_message(message)
+   
+   self.clicked.emit(self.country, action_tag)

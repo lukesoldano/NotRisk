@@ -23,3 +23,5 @@ text = "Eastern Western"
 label_settings = SubResource("LabelSettings_1t4ly")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[connection signal="clicked" from="OccupationWidget" to="." method="_on_occupation_widget_clicked"]

@@ -56,6 +56,7 @@ enum Country
    YAKUTSK = 41
 }
 
+# Needed for signal output to UI
 enum TurnPhase
 {
    START = 0,
@@ -63,6 +64,16 @@ enum TurnPhase
    ATTACK = 2,
    REINFORCE = 3,
    END = 4
+}
+
+# Needed for signal output to UI
+enum AttackTurnSubPhase
+{
+   IDLE = 0,
+   SOURCE_SELECTED = 1,
+   DESTINATION_SELECTED = 2,
+   NUM_ATTACKERS_SELECTED = 3,
+   VICTORY = 4
 }
 
 class Player:

@@ -5,6 +5,7 @@ extends Node2D
 class_name GameBoard
 
 signal next_phase_requested()
+signal country_clicked(country: Types.Country, action_tag: String)
 
 @onready var __country_node_map: Dictionary = { 
    Types.Country.AFGHANISTAN: $Continents/Asia/Afghanistan,
@@ -53,6 +54,9 @@ signal next_phase_requested()
 
 func _ready():
    self.__validate_borders()
+   
+   for node in self.__country_node_map:
+      self.__country_node_map[node].connect("clicked", self._on_country_clicked)
 
 # Dictionary should be in format { country: Country, Deployment }
 func populate(deployments: Dictionary) -> bool:
@@ -77,7 +81,7 @@ func countries_are_neighbors(country1: Types.Country, country2: Types.Country) -
       assert(self.__country_node_map.has(country2), "Invalid country2")
       return false
       
-   return self.__country_node_map[country1].has_border_with(country2)
+   return self.__country_node_map[country1].is_neighboring(country2)
 
 func __validate_borders(): 
    for country in self.__country_node_map:
@@ -87,8 +91,11 @@ func __validate_borders():
          assert(self.__country_node_map[neighbor].neighbors.count(country) != 0, "Neighbor does not have country as one if its neighbors!")
 
 func _on_turn_phase_updated(player: Types.Player, phase: Types.TurnPhase) -> void:
-   $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + str(phase)
+   $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + Types.TurnPhase.keys()[phase]
 
 func _on_next_phase_button_pressed() -> void:
    Logger.log_message("Next phase requested")
    self.next_phase_requested.emit()
+   
+func _on_country_clicked(country: Types.Country, action_tag: String) -> void:
+   self.country_clicked.emit(country, action_tag)
