@@ -72,7 +72,7 @@ enum AttackTurnSubPhase
    IDLE = 0,
    SOURCE_SELECTED = 1,
    DESTINATION_SELECTED = 2,
-   NUM_ATTACKERS_SELECTED = 3,
+   ROLLING = 3,
    VICTORY = 4
 }
 
@@ -85,9 +85,17 @@ class Player:
       self.army_color = i_army_color
 
 class Deployment:
-   var player: Player = null
+   var player: Types.Player = null
    var troop_count: int = 0
    
-   func _init(i_player: Player, i_troop_count: int):
+   func _init(i_player: Types.Player, i_troop_count: int):
       self.player = i_player
       self.troop_count = i_troop_count
+      
+class Occupation:
+   var country: Types.Country
+   var deployment: Types.Deployment
+   
+   func _init(i_country: Types.Country, i_deployment: Types.Deployment):
+      self.country = i_country
+      self.deployment = i_deployment

@@ -25,6 +25,8 @@ var __deployments: Dictionary = {}
 const __SOURCE_COUNTRY_KEY = "src"
 const __DESTINATION_COUNTRY_KEY = "dest"
 const __NUM_UNITS_KEY = "troop_count"
+const __NUM_ATTACKER_DICE_KEY = "num_attack_dice"
+const __NUM_DEFENDER_DICE_KEY = "num_defense_dice"
 var __state_machine_metadata: Dictionary = {}
 
 #func _init(players: Array[Types.Player]):
@@ -131,6 +133,8 @@ func _on_attack_state_entered() -> void:
    
 ## Attack (Idle) Subphase ############################################################################################## Attack (Idle) Subphase
 func _on_attack_idle_state_entered() -> void:
+   self.__state_machine_metadata.clear()
+   
    Logger.log_message("Player: " + 
                       self.__players[self.__active_player_index].user_name + 
                       " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.IDLE] + 
@@ -147,6 +151,9 @@ func _on_attack_source_country_clicked(country: Types.Country, action_tag: Strin
    if self.__active_player_index != self.__local_player_index:
       Logger.log_error("AttackIdle: Local player selected country, but it is not their turn")
       return
+      
+   if self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY):
+      self.__state_machine_metadata.erase(self.__SOURCE_COUNTRY_KEY)
       
    if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
       Logger.log_error("AttackIdle: Local player selected country: " + 
@@ -191,6 +198,9 @@ func _on_attack_source_selected_country_clicked(country: Types.Country, action_t
       Logger.log_error("AttackSourceSelected: Local player selected country, but it is not their turn")
       return
       
+   if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
+      self.__state_machine_metadata.erase(self.__DESTINATION_COUNTRY_KEY)
+      
    if self.__player_occupations[self.__players[self.__local_player_index]].has(country):
       Logger.log_error("AttackSourceSelected: Local player selected country: " + 
                        Types.Country.keys()[country] + 
@@ -216,19 +226,184 @@ func _on_attack_destination_selected_state_entered() -> void:
                       " of phase: " + 
                       Types.TurnPhase.keys()[self.__active_turn_phase])
                      
-   # TODO: This will be coming through a HUD class where options are provided so as to separate game board concept from other UI
-   #$GameBoard.connect("country_clicked", self._on_num_attackers_selected)
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   
+   var ATTACKING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   var DEFENDING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   
+   var ATTACKING_OCCUPATION = Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY])
+   var DEFENDING_OCCUPATION = Types.Occupation.new(DEFENDING_COUNTRY, self.__deployments[DEFENDING_COUNTRY])
+              
+   if self.__active_player_index == self.__local_player_index:       
+      $GameBoardHUD.connect("quit_requested", self._on_attack_destination_selected_quit_requested)
+      $GameBoardHUD.connect("roll_requested", self._on_attack_destination_selected_roll_requested)
+      
+   # Max out attacker and defender dice until user says otherwise
+   var max_attacker_dice_count = 0
+   if ATTACKING_OCCUPATION.deployment.troop_count == 2:
+      max_attacker_dice_count = 1
+   elif ATTACKING_OCCUPATION.deployment.troop_count == 3:
+      max_attacker_dice_count = 2
+   else:
+      max_attacker_dice_count = 3
+      
+   var max_defender_dice_count = 1
+   if DEFENDING_OCCUPATION.deployment.troop_count >= 2:
+      max_defender_dice_count = 2
+      
+   if !self.__state_machine_metadata.has(self.__NUM_ATTACKER_DICE_KEY) or self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY] > max_attacker_dice_count:
+      self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY] = max_attacker_dice_count
+   
+   if !self.__state_machine_metadata.has(self.__NUM_DEFENDER_DICE_KEY) or self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY] > max_defender_dice_count:
+      self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY] = max_defender_dice_count
+   
+   $GameBoardHUD.show_attack_popup(self.__active_player_index == self.__local_player_index, 
+                                   ATTACKING_OCCUPATION, 
+                                   DEFENDING_OCCUPATION, 
+                                   self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY], 
+                                   self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY])
 
 func _on_attack_destination_selected_state_exited() -> void:
-   pass # Replace with function body.
-   
-   # TODO Disconnect from HUD output
-   #$GameBoard.disconnect("country_clicked", self._on_attack_destination_country_selected)
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoardHUD.disconnect("quit_requested", self._on_attack_destination_selected_quit_requested)
+      $GameBoardHUD.disconnect("roll_requested", self._on_attack_destination_selected_roll_requested)
+      
+      if $GameBoardHUD.is_attack_popup_showing():
+         $GameBoardHUD.enable_attack_popup_user_inputs(false)
 
 func _on_attack_destination_selected_state_input(event) -> void:
    if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
       if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
-         $PlayerTurnStateMachine.send_event("DestinationSelectedToSourceSelected")
+         self._on_attack_destination_selected_quit_requested()
+         
+func _on_attack_destination_selected_quit_requested() -> void:
+   $GameBoardHUD.hide_attack_popup()
+   $PlayerTurnStateMachine.send_event("DestinationSelectedToSourceSelected")
+   
+func _on_attack_destination_selected_roll_requested() -> void:
+   $PlayerTurnStateMachine.send_event("DestinationSelectedToRolling")
+   
+## Attack (Rolling) Subphase ########################################################################################### Attack (Rolling) Subphase
+func _on_attack_rolling_state_entered() -> void:
+   Logger.log_message("Player: " + 
+                      self.__players[self.__active_player_index].user_name + 
+                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.ROLLING] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_ATTACKER_DICE_KEY), "Num attacker dice not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_DEFENDER_DICE_KEY), "Num defender dice not set previously!")
+   
+   var ATTACKING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   var DEFENDING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   
+   var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
+   var NUM_DEFENDER_DICE: int = self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY]
+   
+   Logger.log_message("Player: " +
+                      self.__players[self.__active_player_index].user_name +
+                      " rolling from: " +
+                      Types.Country.keys()[ATTACKING_COUNTRY] +
+                      " with: " +
+                      str(NUM_ATTACKER_DICE) +
+                      " dice, against Player: " +
+                      self.__deployments[DEFENDING_COUNTRY].player.user_name +
+                      " who occupies: " +
+                      Types.Country.keys()[DEFENDING_COUNTRY] +
+                      " and is rolling with: " +
+                      str(NUM_DEFENDER_DICE) +
+                      " dice")
+   
+   var attacker_rolls: Array[int] = []
+   var defender_rolls: Array[int] = []
+   
+   for x in NUM_ATTACKER_DICE:
+      attacker_rolls.append((randi() % 6) + 1)
+   for x in NUM_DEFENDER_DICE:
+      defender_rolls.append((randi() % 6) + 1)
+      
+   attacker_rolls.sort_custom(func(a, b): return a > b)
+   defender_rolls.sort_custom(func(a, b): return a > b)
+   
+   # Create strings after sort, as the sorted array is used by index for battles
+   var attacker_rolls_str: String = ""
+   var defender_rolls_str: String = ""
+   
+   for x in NUM_ATTACKER_DICE:
+      attacker_rolls_str += str(attacker_rolls[x]) + " "
+   for x in NUM_DEFENDER_DICE:
+      defender_rolls_str += str(defender_rolls[x]) + " "
+   
+   var attacking_units_lost = 0
+   var defending_units_lost = 0
+   
+   for roll in (NUM_DEFENDER_DICE if NUM_DEFENDER_DICE <= NUM_ATTACKER_DICE else NUM_ATTACKER_DICE):
+      if defender_rolls[roll] >= attacker_rolls[roll]:
+         attacking_units_lost += 1
+      else:
+         defending_units_lost += 1
+         
+   if attacking_units_lost > 0:
+      self.__deployments[ATTACKING_COUNTRY].troop_count -= attacking_units_lost
+      $GameBoard.set_country_deployment(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY])
+      
+   if defending_units_lost > 0:
+      self.__deployments[DEFENDING_COUNTRY].troop_count -= defending_units_lost
+      $GameBoard.set_country_deployment(DEFENDING_COUNTRY, self.__deployments[DEFENDING_COUNTRY])
+      
+   Logger.log_message("Attacker rolled: " + 
+                      attacker_rolls_str + 
+                      "Defender rolled: " + 
+                      defender_rolls_str + 
+                      "Attacker lost: " + 
+                      str(attacking_units_lost) + 
+                      " units, Defender lost: " +
+                      str(defending_units_lost) +
+                      " units")
+      
+   # Check if no attackers left
+   if self.__deployments[ATTACKING_COUNTRY].troop_count <= 1:
+      $GameBoardHUD.hide_attack_popup()
+      $PlayerTurnStateMachine.send_event("RollingToIdle")
+   elif self.__deployments[DEFENDING_COUNTRY].troop_count <= 0:
+      $GameBoardHUD.hide_attack_popup()
+      $PlayerTurnStateMachine.send_event("RollingToVictory")
+   else:
+      $PlayerTurnStateMachine.send_event("RollingToDestinationSelected")
+      
+## Attack (Victory) Subphase ########################################################################################### Attack (Victory) Subphase
+func _on_attack_victory_state_entered() -> void:
+   var ATTACKING_PLAYER = self.__players[self.__active_player_index]
+   
+   Logger.log_message("Player: " + 
+                      ATTACKING_PLAYER.user_name + 
+                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.VICTORY] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_ATTACKER_DICE_KEY), "Num attacker dice not set previously!")
+   
+   var ATTACKING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   var DEFENDING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   
+   var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
+   
+   self.__player_occupations[ATTACKING_PLAYER].append(DEFENDING_COUNTRY)
+   self.__player_occupations[self.__deployments[DEFENDING_COUNTRY].player].erase(DEFENDING_COUNTRY)
+   
+   self.__deployments[ATTACKING_COUNTRY].troop_count -= NUM_ATTACKER_DICE
+   self.__deployments[DEFENDING_COUNTRY].player = ATTACKING_PLAYER
+   self.__deployments[DEFENDING_COUNTRY].troop_count = NUM_ATTACKER_DICE
+   
+   $GameBoard.set_country_deployment(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY])
+   $GameBoard.set_country_deployment(DEFENDING_COUNTRY, self.__deployments[DEFENDING_COUNTRY])
+   
+   $PlayerTurnStateMachine.send_event("VictoryToIdle")
 
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:

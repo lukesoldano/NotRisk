@@ -1,11 +1,10 @@
+res://Scenes/game_board_hud.tscn
 res://Scenes/game_engine.tscn
 res://Scenes/game_board.tscn
 res://Scenes/country.tscn
 res://Scenes/occupation_widget.tscn
+res://Scenes/game_board_hud.gd
 res://Scenes/game_engine.gd
-res://Scenes/game_board.gd
-res://Scenes/country.gd
-res://Scenes/occupation_widget.gd
-res://Scripts/constants.gd
 res://Scripts/types.gd
-res://Scripts/user_input.gd
+res://Scripts/utilities.gd
+res://Resources/attack_dice.tres

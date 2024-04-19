@@ -1,0 +1,242 @@
+[gd_scene load_steps=24 format=3 uid="uid://cf7w6o55pepoh"]
+
+[ext_resource type="Script" path="res://Scenes/game_board_hud.gd" id="1_0m68m"]
+[ext_resource type="SpriteFrames" uid="uid://dfr17kog3wwre" path="res://Resources/attack_dice.tres" id="2_qieay"]
+[ext_resource type="SpriteFrames" uid="uid://v83f83u75j01" path="res://Resources/defense_dice.tres" id="3_yx54i"]
+
+[sub_resource type="FontVariation" id="FontVariation_jhcjv"]
+variation_embolden = 0.75
+
+[sub_resource type="LabelSettings" id="LabelSettings_qwubm"]
+font = SubResource("FontVariation_jhcjv")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_vpvu0"]
+font_size = 32
+
+[sub_resource type="FontVariation" id="FontVariation_golpx"]
+variation_embolden = 0.75
+
+[sub_resource type="LabelSettings" id="LabelSettings_7xrpd"]
+font = SubResource("FontVariation_golpx")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_ht7ep"]
+font_size = 32
+
+[sub_resource type="FontVariation" id="FontVariation_l6x6s"]
+variation_embolden = 0.75
+
+[sub_resource type="LabelSettings" id="LabelSettings_wisg0"]
+font = SubResource("FontVariation_l6x6s")
+font_size = 32
+
+[sub_resource type="FontVariation" id="FontVariation_dpu76"]
+variation_embolden = 0.75
+
+[sub_resource type="LabelSettings" id="LabelSettings_yy0bo"]
+font = SubResource("FontVariation_dpu76")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_ydeet"]
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_d6e6c"]
+font_size = 32
+
+[sub_resource type="FontVariation" id="FontVariation_jsnnr"]
+variation_embolden = 0.75
+
+[sub_resource type="LabelSettings" id="LabelSettings_jo72h"]
+font = SubResource("FontVariation_jsnnr")
+font_size = 32
+
+[sub_resource type="FontVariation" id="FontVariation_8p3bb"]
+variation_embolden = 0.75
+
+[sub_resource type="LabelSettings" id="LabelSettings_gmf06"]
+font = SubResource("FontVariation_8p3bb")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_dr4au"]
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_x7ekm"]
+font_size = 32
+
+[sub_resource type="Theme" id="Theme_nfb2f"]
+default_font_size = 32
+
+[sub_resource type="Theme" id="Theme_kubri"]
+default_font_size = 32
+
+[node name="GameBoardHUD" type="CanvasLayer"]
+script = ExtResource("1_0m68m")
+
+[node name="AttackPopupCanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Background" type="ColorRect" parent="AttackPopupCanvasLayer"]
+offset_left = 512.0
+offset_top = 192.0
+offset_right = 1408.0
+offset_bottom = 896.0
+color = Color(0, 0, 0, 0.752941)
+
+[node name="AttackSourceLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 576.0
+offset_top = 256.0
+offset_right = 896.0
+offset_bottom = 317.0
+text = "Attacking From"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackSourceCountryLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 576.0
+offset_top = 320.0
+offset_right = 896.0
+offset_bottom = 384.0
+text = "Eastern Western"
+label_settings = SubResource("LabelSettings_vpvu0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackDestinationLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 1024.0
+offset_top = 256.0
+offset_right = 1341.0
+offset_bottom = 317.0
+text = "Attacking To"
+label_settings = SubResource("LabelSettings_7xrpd")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackDestinationCountryLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 1024.0
+offset_top = 320.0
+offset_right = 1343.0
+offset_bottom = 384.0
+text = "Eastern Western"
+label_settings = SubResource("LabelSettings_ht7ep")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackingArmiesLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 576.0
+offset_top = 384.0
+offset_right = 896.0
+offset_bottom = 445.0
+text = "Attacking Armies"
+label_settings = SubResource("LabelSettings_wisg0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DefendingArmiesLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 1024.0
+offset_top = 384.0
+offset_right = 1344.0
+offset_bottom = 448.0
+text = "Defending Armies"
+label_settings = SubResource("LabelSettings_yy0bo")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackingArmiesCountLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 576.0
+offset_top = 448.0
+offset_right = 896.0
+offset_bottom = 512.0
+text = "100"
+label_settings = SubResource("LabelSettings_ydeet")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DefendingArmiesCountLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 1024.0
+offset_top = 448.0
+offset_right = 1344.0
+offset_bottom = 512.0
+text = "100"
+label_settings = SubResource("LabelSettings_d6e6c")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackerNumDiceLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 576.0
+offset_top = 512.0
+offset_right = 896.0
+offset_bottom = 576.0
+text = "Attacker # Dice"
+label_settings = SubResource("LabelSettings_jo72h")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DefenderNumDiceLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 1024.0
+offset_top = 512.0
+offset_right = 1344.0
+offset_bottom = 576.0
+text = "Defender # Dice"
+label_settings = SubResource("LabelSettings_gmf06")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackerNumDiceCountLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 576.0
+offset_top = 576.0
+offset_right = 896.0
+offset_bottom = 640.0
+text = "1"
+label_settings = SubResource("LabelSettings_dr4au")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DefenderNumDiceCountLabel" type="Label" parent="AttackPopupCanvasLayer"]
+offset_left = 1024.0
+offset_top = 576.0
+offset_right = 1344.0
+offset_bottom = 640.0
+text = "1"
+label_settings = SubResource("LabelSettings_x7ekm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="QuitButton" type="Button" parent="AttackPopupCanvasLayer"]
+offset_left = 640.0
+offset_top = 768.0
+offset_right = 832.0
+offset_bottom = 832.0
+theme = SubResource("Theme_nfb2f")
+text = "Quit"
+
+[node name="RollButton" type="Button" parent="AttackPopupCanvasLayer"]
+offset_left = 1088.0
+offset_top = 768.0
+offset_right = 1280.0
+offset_bottom = 832.0
+theme = SubResource("Theme_kubri")
+text = "Roll"
+
+[node name="AttackerDie1" type="AnimatedSprite2D" parent="AttackPopupCanvasLayer"]
+position = Vector2(640, 704)
+sprite_frames = ExtResource("2_qieay")
+
+[node name="AttackerDie2" type="AnimatedSprite2D" parent="AttackPopupCanvasLayer"]
+position = Vector2(736, 704)
+sprite_frames = ExtResource("2_qieay")
+
+[node name="AttackerDie3" type="AnimatedSprite2D" parent="AttackPopupCanvasLayer"]
+position = Vector2(832, 704)
+sprite_frames = ExtResource("2_qieay")
+
+[node name="DefenderDie1" type="AnimatedSprite2D" parent="AttackPopupCanvasLayer"]
+position = Vector2(1136, 704)
+sprite_frames = ExtResource("3_yx54i")
+
+[node name="DefenderDie2" type="AnimatedSprite2D" parent="AttackPopupCanvasLayer"]
+position = Vector2(1232, 704)
+sprite_frames = ExtResource("3_yx54i")
+
+[connection signal="pressed" from="AttackPopupCanvasLayer/QuitButton" to="." method="_on_attack_quit_button_pressed"]
+[connection signal="pressed" from="AttackPopupCanvasLayer/RollButton" to="." method="_on_attack_roll_button_pressed"]

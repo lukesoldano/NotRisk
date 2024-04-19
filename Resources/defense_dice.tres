@@ -1,0 +1,53 @@
+[gd_resource type="SpriteFrames" load_steps=8 format=3 uid="uid://v83f83u75j01"]
+
+[ext_resource type="Texture2D" uid="uid://7d8d8035jf0i" path="res://Assets/kenney_boardgame-pack/Spritesheets/diceWhite_border.png" id="1_vjbvs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vqmwb"]
+atlas = ExtResource("1_vjbvs")
+region = Rect2(0, 136, 68, 68)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_06lnb"]
+atlas = ExtResource("1_vjbvs")
+region = Rect2(68, 68, 68, 68)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_28mdj"]
+atlas = ExtResource("1_vjbvs")
+region = Rect2(68, 0, 68, 68)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ercyx"]
+atlas = ExtResource("1_vjbvs")
+region = Rect2(68, 136, 68, 68)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_urqpe"]
+atlas = ExtResource("1_vjbvs")
+region = Rect2(0, 68, 68, 68)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1gbxd"]
+atlas = ExtResource("1_vjbvs")
+region = Rect2(0, 0, 68, 68)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vqmwb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_06lnb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_28mdj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ercyx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_urqpe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1gbxd")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

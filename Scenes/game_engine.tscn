@@ -1,9 +1,10 @@
-[gd_scene load_steps=14 format=3 uid="uid://c7hgbaejve0so"]
+[gd_scene load_steps=15 format=3 uid="uid://c7hgbaejve0so"]
 
 [ext_resource type="Script" path="res://Scenes/game_engine.gd" id="1_clvx5"]
 [ext_resource type="PackedScene" uid="uid://fim7aocqhl1u" path="res://Scenes/game_board.tscn" id="2_qathn"]
 [ext_resource type="Script" path="res://addons/godot_state_charts/state_chart.gd" id="2_xewfj"]
 [ext_resource type="Script" path="res://addons/godot_state_charts/compound_state.gd" id="3_8tfo1"]
+[ext_resource type="PackedScene" uid="uid://cf7w6o55pepoh" path="res://Scenes/game_board_hud.tscn" id="3_w4y55"]
 [ext_resource type="Script" path="res://addons/godot_state_charts/atomic_state.gd" id="4_xadjy"]
 [ext_resource type="Script" path="res://addons/godot_state_charts/transition.gd" id="5_bpogy"]
 [ext_resource type="Script" path="res://addons/godot_state_charts/state_is_active_guard.gd" id="6_edvsf"]
@@ -36,6 +37,8 @@ state = NodePath("..")
 script = ExtResource("1_clvx5")
 
 [node name="GameBoard" parent="." instance=ExtResource("2_qathn")]
+
+[node name="GameBoardHUD" parent="." instance=ExtResource("3_w4y55")]
 
 [node name="PlayerTurnStateMachine" type="Node" parent="."]
 script = ExtResource("2_xewfj")
@@ -141,28 +144,28 @@ script = ExtResource("5_bpogy")
 to = NodePath("../../SourceSelected")
 event = &"DestinationSelectedToSourceSelected"
 
-[node name="ToNumAttackersSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/DestinationSelected"]
+[node name="ToRolling" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/DestinationSelected"]
 script = ExtResource("5_bpogy")
-to = NodePath("../../NumAttackersSelected")
-event = &"DestinationSelectedToNumAttackersSelected"
+to = NodePath("../../Rolling")
+event = &"DestinationSelectedToRolling"
 
-[node name="NumAttackersSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
+[node name="Rolling" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
 script = ExtResource("4_xadjy")
 
-[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/NumAttackersSelected"]
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/Rolling"]
 script = ExtResource("5_bpogy")
 to = NodePath("../../Idle")
-event = &"NumAttackersSelectedToIdle"
+event = &"RollingToIdle"
 
-[node name="ToDestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/NumAttackersSelected"]
+[node name="ToDestinationSelected" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/Rolling"]
 script = ExtResource("5_bpogy")
 to = NodePath("../../DestinationSelected")
-event = &"NumAttackersSelectedToDestinationSelected"
+event = &"RollingToDestinationSelected"
 
-[node name="ToVictory" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/NumAttackersSelected"]
+[node name="ToVictory" type="Node" parent="PlayerTurnStateMachine/Phase/Attack/Rolling"]
 script = ExtResource("5_bpogy")
 to = NodePath("../../Victory")
-event = &"NumAttackersSelectedToVictory"
+event = &"RollingToVictory"
 
 [node name="Victory" type="Node" parent="PlayerTurnStateMachine/Phase/Attack"]
 script = ExtResource("4_xadjy")
@@ -236,5 +239,7 @@ guard = SubResource("Resource_tucjx")
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/DestinationSelected" to="." method="_on_attack_destination_selected_state_entered"]
 [connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Attack/DestinationSelected" to="." method="_on_attack_destination_selected_state_exited"]
 [connection signal="state_input" from="PlayerTurnStateMachine/Phase/Attack/DestinationSelected" to="." method="_on_attack_destination_selected_state_input"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/Rolling" to="." method="_on_attack_rolling_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/Victory" to="." method="_on_attack_victory_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Reinforce" to="." method="_on_reinforce_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/End" to="." method="_on_end_state_entered"]
