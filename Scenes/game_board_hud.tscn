@@ -1,7 +1,9 @@
-[gd_scene load_steps=24 format=3 uid="uid://cf7w6o55pepoh"]
+[gd_scene load_steps=27 format=3 uid="uid://cf7w6o55pepoh"]
 
 [ext_resource type="Script" path="res://Scenes/game_board_hud.gd" id="1_0m68m"]
+[ext_resource type="Texture2D" uid="uid://dh4nkpli41k7r" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark24.png" id="2_ds0wd"]
 [ext_resource type="SpriteFrames" uid="uid://dfr17kog3wwre" path="res://Resources/attack_dice.tres" id="2_qieay"]
+[ext_resource type="Texture2D" uid="uid://c4w07sryq3opj" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark25.png" id="3_5a8i7"]
 [ext_resource type="SpriteFrames" uid="uid://v83f83u75j01" path="res://Resources/defense_dice.tres" id="3_yx54i"]
 
 [sub_resource type="FontVariation" id="FontVariation_jhcjv"]
@@ -70,10 +72,14 @@ default_font_size = 32
 [sub_resource type="Theme" id="Theme_kubri"]
 default_font_size = 32
 
+[sub_resource type="Theme" id="Theme_5u307"]
+default_font_size = 32
+
 [node name="GameBoardHUD" type="CanvasLayer"]
 script = ExtResource("1_0m68m")
 
 [node name="AttackPopupCanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="Background" type="ColorRect" parent="AttackPopupCanvasLayer"]
 offset_left = 512.0
@@ -218,6 +224,24 @@ offset_bottom = 832.0
 theme = SubResource("Theme_kubri")
 text = "Roll"
 
+[node name="ReduceAttackDieButton" type="Button" parent="AttackPopupCanvasLayer"]
+offset_left = 560.0
+offset_top = 680.0
+offset_right = 600.0
+offset_bottom = 728.0
+icon = ExtResource("2_ds0wd")
+flat = true
+expand_icon = true
+
+[node name="IncreaseAttackDieButton" type="Button" parent="AttackPopupCanvasLayer"]
+offset_left = 872.0
+offset_top = 680.0
+offset_right = 912.0
+offset_bottom = 728.0
+icon = ExtResource("3_5a8i7")
+flat = true
+expand_icon = true
+
 [node name="AttackerDie1" type="AnimatedSprite2D" parent="AttackPopupCanvasLayer"]
 position = Vector2(640, 704)
 sprite_frames = ExtResource("2_qieay")
@@ -238,5 +262,115 @@ sprite_frames = ExtResource("3_yx54i")
 position = Vector2(1232, 704)
 sprite_frames = ExtResource("3_yx54i")
 
+[node name="VictoryPopupCanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Background" type="ColorRect" parent="VictoryPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 232.0
+offset_right = 1216.0
+offset_bottom = 920.0
+color = Color(0, 0, 0, 0.752941)
+
+[node name="VictoryLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 640.0
+offset_top = 256.0
+offset_right = 1280.0
+offset_bottom = 317.0
+text = "Victory!"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MoveFromLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 384.0
+offset_right = 1216.0
+offset_bottom = 445.0
+text = "Moving Armies From"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MoveFromCountryLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 448.0
+offset_right = 1216.0
+offset_bottom = 512.0
+text = "Eastern Western"
+label_settings = SubResource("LabelSettings_vpvu0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MoveToLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 512.0
+offset_right = 1216.0
+offset_bottom = 573.0
+text = "Moving Armies To"
+label_settings = SubResource("LabelSettings_7xrpd")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MoveToCountryLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 576.0
+offset_right = 1216.0
+offset_bottom = 640.0
+text = "Eastern Western"
+label_settings = SubResource("LabelSettings_ht7ep")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReduceTroopsButton" type="Button" parent="VictoryPopupCanvasLayer"]
+offset_left = 840.0
+offset_top = 712.0
+offset_right = 888.0
+offset_bottom = 760.0
+icon = ExtResource("2_ds0wd")
+flat = true
+expand_icon = true
+
+[node name="IncreaseTroopsButton" type="Button" parent="VictoryPopupCanvasLayer"]
+offset_left = 1032.0
+offset_top = 712.0
+offset_right = 1080.0
+offset_bottom = 760.0
+icon = ExtResource("3_5a8i7")
+flat = true
+expand_icon = true
+
+[node name="ArmiesToMoveLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 640.0
+offset_right = 1216.0
+offset_bottom = 701.0
+text = "Armies To Move"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ArmiesToMoveCountLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+offset_left = 896.0
+offset_top = 704.0
+offset_right = 1024.0
+offset_bottom = 768.0
+text = "100"
+label_settings = SubResource("LabelSettings_vpvu0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ConfirmButton" type="Button" parent="VictoryPopupCanvasLayer"]
+offset_left = 848.0
+offset_top = 832.0
+offset_right = 1072.0
+offset_bottom = 893.0
+theme = SubResource("Theme_5u307")
+text = "Confirm"
+
 [connection signal="pressed" from="AttackPopupCanvasLayer/QuitButton" to="." method="_on_attack_quit_button_pressed"]
 [connection signal="pressed" from="AttackPopupCanvasLayer/RollButton" to="." method="_on_attack_roll_button_pressed"]
+[connection signal="pressed" from="AttackPopupCanvasLayer/ReduceAttackDieButton" to="." method="_on_reduce_attack_die_button_pressed"]
+[connection signal="pressed" from="AttackPopupCanvasLayer/IncreaseAttackDieButton" to="." method="_on_increase_attack_die_button_pressed"]
+[connection signal="pressed" from="VictoryPopupCanvasLayer/ReduceTroopsButton" to="." method="_on_victory_reduce_troops_button_pressed"]
+[connection signal="pressed" from="VictoryPopupCanvasLayer/IncreaseTroopsButton" to="." method="_on_victory_increase_troops_button_pressed"]
+[connection signal="pressed" from="VictoryPopupCanvasLayer/ConfirmButton" to="." method="_on_victory_confirm_button_pressed"]

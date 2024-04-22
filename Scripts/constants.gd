@@ -1,5 +1,8 @@
 class_name Constants
 
+const MAX_NUM_ATTACK_DIE: int = 3
+const MAX_NUM_DEFEND_DIE: int = 2
+
 # Index correlates to number of players
 const STARTING_TROOP_COUNTS = [
    null, # Can't have 0 players
