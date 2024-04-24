@@ -67,6 +67,14 @@ enum TurnPhase
 }
 
 # Needed for signal output to UI
+enum DeployTurnSubPhase
+{
+   IDLE = 0,
+   PLAYING_CARDS = 1,
+   DEPLOYING = 2
+}
+
+# Needed for signal output to UI
 enum AttackTurnSubPhase
 {
    IDLE = 0,

@@ -77,11 +77,12 @@ event = &"IdleToPlayingCards"
 [node name="ToDeploying" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/Idle"]
 script = ExtResource("5_bpogy")
 to = NodePath("../../Deploying")
+event = &"IdleToDeploying"
 
 [node name="PlayingCards" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy"]
 script = ExtResource("4_xadjy")
 
-[node name="Toidle" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/PlayingCards"]
+[node name="ToIdle" type="Node" parent="PlayerTurnStateMachine/Phase/Deploy/PlayingCards"]
 script = ExtResource("5_bpogy")
 to = NodePath("../../Idle")
 event = &"PlayingCardsToIdle"
@@ -230,6 +231,11 @@ guard = SubResource("Resource_tucjx")
 
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Start" to="." method="_on_start_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Deploy" to="." method="_on_deploy_state_entered"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Deploy/Idle" to="." method="_on_deploy_idle_state_entered"]
+[connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Deploy/Idle" to="." method="_on_deploy_idle_state_exited"]
+[connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Deploy/Deploying" to="." method="_on_deploy_deploying_state_entered"]
+[connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Deploy/Deploying" to="." method="_on_deploy_deploying_state_exited"]
+[connection signal="state_input" from="PlayerTurnStateMachine/Phase/Deploy/Deploying" to="." method="_on_deploy_deploying_state_input"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack" to="." method="_on_attack_state_entered"]
 [connection signal="state_entered" from="PlayerTurnStateMachine/Phase/Attack/Idle" to="." method="_on_attack_idle_state_entered"]
 [connection signal="state_exited" from="PlayerTurnStateMachine/Phase/Attack/Idle" to="." method="_on_attack_idle_state_exited"]

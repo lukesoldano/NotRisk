@@ -25,6 +25,7 @@ var __deployments: Dictionary = {}
 const __SOURCE_COUNTRY_KEY = "src"
 const __DESTINATION_COUNTRY_KEY = "dest"
 const __NUM_UNITS_KEY = "troop_count"
+const __REINFORCEMENTS_REMAINING_KEY = "reinforcements_remaining"
 const __NUM_ATTACKER_DICE_KEY = "num_attack_dice"
 const __NUM_DEFENDER_DICE_KEY = "num_defense_dice"
 const __NUM_ATTACKERS_TO_MOVE_KEY = "num_attackers_to_move"
@@ -127,9 +128,91 @@ func _on_deploy_state_entered() -> void:
                       self.__players[self.__active_player_index].user_name + 
                       " entered phase: " + 
                       Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = 3 # TODO: Update
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
+   
+## Deploy (Idle) Subphase ############################################################################################## Deploy (Idle) Subphase
+func _on_deploy_idle_state_entered() -> void:
+   Logger.log_message("Player: " + 
+                      self.__players[self.__active_player_index].user_name + 
+                      " entered subphase: " + Types.DeployTurnSubPhase.keys()[Types.DeployTurnSubPhase.IDLE] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.connect("country_clicked", self._on_deploy_idle_country_clicked)
+   
+func _on_deploy_idle_state_exited() -> void:
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.disconnect("country_clicked", self._on_deploy_idle_country_clicked)
+      
+func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String) -> void:
+   Logger.log_message("_on_deploy_idle_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   
+   assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
+   
+   var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
+   
+   if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
+      self.__state_machine_metadata.erase(self.__DESTINATION_COUNTRY_KEY)
+      
+   if self.__state_machine_metadata.has(self.__NUM_UNITS_KEY):
+      self.__state_machine_metadata.erase(self.__NUM_UNITS_KEY)
+      
+   if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
+      Logger.log_error("DeployIdle: Local player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they do not own it")
+      return
+   
+   if REINFORCEMENTS_REMAINING <= 0:
+      Logger.log_error("DeployIdle: Local player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they do not have any reinforcements remaining")
+      return
+      
+   self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY] = country
+   
+   $PlayerTurnStateMachine.send_event("IdleToDeploying")
+   
+## Deploy (Deploying) Subphase ######################################################################################### Deploy (Deploying) Subphase
+func _on_deploy_deploying_state_entered() -> void:
+   Logger.log_message("Player: " + 
+                      self.__players[self.__active_player_index].user_name + 
+                      " entered subphase: " + Types.DeployTurnSubPhase.keys()[Types.DeployTurnSubPhase.DEPLOYING] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+   
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Deploy country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
+   
+   var DEPLOY_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
+                    
+   if self.__active_player_index == self.__local_player_index:
+      pass
+      
+   self.__state_machine_metadata[self.__NUM_UNITS_KEY] = REINFORCEMENTS_REMAINING
+      
+   $GameBoardHUD.show_deploy_popup(self.__active_player_index == self.__local_player_index, 
+                                   self.__players[self.__active_player_index], 
+                                   DEPLOY_COUNTRY, 
+                                   REINFORCEMENTS_REMAINING, 
+                                   REINFORCEMENTS_REMAINING)
 
+func _on_deploy_deploying_state_exited() -> void:
+   if self.__active_player_index == self.__local_player_index:
+      pass
+      
+   $GameBoardHUD.hide_deploy_popup()
+   
+func _on_deploy_deploying_state_input(event: InputEvent) -> void:
+   if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
+      if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
+         $PlayerTurnStateMachine.send_event("DeployingToIdle")
+   
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
    self.__active_turn_phase = Types.TurnPhase.ATTACK
@@ -151,20 +234,16 @@ func _on_attack_idle_state_entered() -> void:
                       " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.IDLE] + 
                       " of phase: " + 
                       Types.TurnPhase.keys()[self.__active_turn_phase])
-   $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
+                     
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
    
 func _on_attack_idle_state_exited() -> void:
-   $GameBoard.disconnect("country_clicked", self._on_attack_source_country_clicked)
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.disconnect("country_clicked", self._on_attack_source_country_clicked)
    
 func _on_attack_source_country_clicked(country: Types.Country, action_tag: String) -> void:
    Logger.log_message("_on_attack_source_country_selected( " + Types.Country.keys()[country] + ", " + action_tag + " )")
-   
-   if self.__active_player_index != self.__local_player_index:
-      Logger.log_error("AttackIdle: Local player selected country, but it is not their turn")
-      return
-      
-   if self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY):
-      self.__state_machine_metadata.erase(self.__SOURCE_COUNTRY_KEY)
       
    if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
       Logger.log_error("AttackIdle: Local player selected country: " + 
@@ -189,10 +268,13 @@ func _on_attack_source_selected_state_entered() -> void:
                       " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.SOURCE_SELECTED] + 
                       " of phase: " + 
                       Types.TurnPhase.keys()[self.__active_turn_phase])
-   $GameBoard.connect("country_clicked", self._on_attack_source_selected_country_clicked)
+   
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.connect("country_clicked", self._on_attack_source_selected_country_clicked)
 
 func _on_attack_source_selected_state_exited() -> void:
-   $GameBoard.disconnect("country_clicked", self._on_attack_source_selected_country_clicked)
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.disconnect("country_clicked", self._on_attack_source_selected_country_clicked)
    
 func _on_attack_source_selected_state_input(event: InputEvent) -> void:
    if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
@@ -524,3 +606,4 @@ func _on_end_state_entered() -> void:
    $PlayerTurnStateMachine.send_event("EndToStart")
 
 ########################################################################################################################
+

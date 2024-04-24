@@ -16,6 +16,9 @@ font_size = 32
 [sub_resource type="LabelSettings" id="LabelSettings_vpvu0"]
 font_size = 32
 
+[sub_resource type="Theme" id="Theme_5u307"]
+default_font_size = 32
+
 [sub_resource type="FontVariation" id="FontVariation_golpx"]
 variation_embolden = 0.75
 
@@ -72,11 +75,101 @@ default_font_size = 32
 [sub_resource type="Theme" id="Theme_kubri"]
 default_font_size = 32
 
-[sub_resource type="Theme" id="Theme_5u307"]
-default_font_size = 32
-
 [node name="GameBoardHUD" type="CanvasLayer"]
 script = ExtResource("1_0m68m")
+
+[node name="DeployPopupCanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Background" type="ColorRect" parent="DeployPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 232.0
+offset_right = 1216.0
+offset_bottom = 792.0
+color = Color(0, 0, 0, 0.752941)
+
+[node name="DeployLabel" type="Label" parent="DeployPopupCanvasLayer"]
+offset_left = 640.0
+offset_top = 256.0
+offset_right = 1280.0
+offset_bottom = 317.0
+text = "Deploy"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DeployArmiesToLabel" type="Label" parent="DeployPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 384.0
+offset_right = 1216.0
+offset_bottom = 445.0
+text = "Deploying Armies To"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DeployArmiesToCountryLabel" type="Label" parent="DeployPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 448.0
+offset_right = 1216.0
+offset_bottom = 512.0
+text = "Eastern Western"
+label_settings = SubResource("LabelSettings_vpvu0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReduceTroopsButton" type="Button" parent="DeployPopupCanvasLayer"]
+offset_left = 840.0
+offset_top = 584.0
+offset_right = 888.0
+offset_bottom = 632.0
+icon = ExtResource("2_ds0wd")
+flat = true
+expand_icon = true
+
+[node name="IncreaseTroopsButton" type="Button" parent="DeployPopupCanvasLayer"]
+offset_left = 1032.0
+offset_top = 584.0
+offset_right = 1080.0
+offset_bottom = 632.0
+icon = ExtResource("3_5a8i7")
+flat = true
+expand_icon = true
+
+[node name="ArmiesToDeployLabel" type="Label" parent="DeployPopupCanvasLayer"]
+offset_left = 704.0
+offset_top = 512.0
+offset_right = 1216.0
+offset_bottom = 573.0
+text = "Armies To Deploy"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ArmiesToDeployCountLabel" type="Label" parent="DeployPopupCanvasLayer"]
+offset_left = 896.0
+offset_top = 576.0
+offset_right = 1024.0
+offset_bottom = 640.0
+text = "100"
+label_settings = SubResource("LabelSettings_vpvu0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CancelButton" type="Button" parent="DeployPopupCanvasLayer"]
+offset_left = 968.0
+offset_top = 704.0
+offset_right = 1192.0
+offset_bottom = 765.0
+theme = SubResource("Theme_5u307")
+text = "Confirm"
+
+[node name="ConfirmButton" type="Button" parent="DeployPopupCanvasLayer"]
+offset_left = 728.0
+offset_top = 704.0
+offset_right = 952.0
+offset_bottom = 765.0
+theme = SubResource("Theme_5u307")
+text = "Cancel"
 
 [node name="AttackPopupCanvasLayer" type="CanvasLayer" parent="."]
 visible = false
@@ -263,6 +356,7 @@ position = Vector2(1232, 704)
 sprite_frames = ExtResource("3_yx54i")
 
 [node name="VictoryPopupCanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="Background" type="ColorRect" parent="VictoryPopupCanvasLayer"]
 offset_left = 704.0

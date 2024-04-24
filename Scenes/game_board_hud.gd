@@ -4,12 +4,16 @@ extends CanvasLayer
 
 class_name GameBoardHUD
 
+signal deploy_quit_requested()
+signal deploy_confirm_requested()
+signal deploy_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
+
 signal attack_quit_requested()
 signal attack_roll_requested()
 signal attack_die_count_change_requested(old_num_dice: int, new_num_dice: int)
 
-signal post_victory_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
 signal post_victory_troop_movement_confirm_requested()
+signal post_victory_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
 
 const __DEFAULT_VALUE_STR = "-"
 const __DEFAULT_VALUE_COLOR = Color.WHITE
@@ -18,8 +22,41 @@ const __DEFAULT_VALUE_COLOR = Color.WHITE
 @onready var __defend_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/DefenderDie1, $AttackPopupCanvasLayer/DefenderDie2]
 
 func _ready():
+   self.hide_deploy_popup()
    self.hide_attack_popup()
    self.hide_victory_popup()
+   
+## Deploy Popup ######################################################################################################## Deploy Popup
+func is_deploy_popup_showing() -> bool:
+   return $DeployPopupCanvasLayer.visible
+   
+func show_deploy_popup(is_local_player: bool, player: Types.Player, deploy_country: Types.Country, troops_to_deploy: int, max_deployable_troops: int) -> void:
+   $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.text = Types.Country.keys()[deploy_country]
+   $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.label_settings.font_color = player.army_color
+   
+   $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text = str(troops_to_deploy)
+   $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.label_settings.font_color = player.army_color
+   
+   $DeployPopupCanvasLayer/ReduceTroopsButton.disabled = troops_to_deploy == 1
+   $DeployPopupCanvasLayer/IncreaseTroopsButton.disabled = troops_to_deploy == max_deployable_troops
+   
+   $DeployPopupCanvasLayer.visible = true
+   self.show_deploy_popup_user_inputs(is_local_player)
+
+func hide_deploy_popup() -> void:
+   $DeployPopupCanvasLayer.visible = false
+   
+   $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.text = self.__DEFAULT_VALUE_STR
+   $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
+   
+   $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text = self.__DEFAULT_VALUE_STR
+   $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
+   
+func show_deploy_popup_user_inputs(i_visible: bool):
+   $DeployPopupCanvasLayer/ReduceTroopsButton.visible = i_visible
+   $DeployPopupCanvasLayer/IncreaseTroopsButton.visible = i_visible
+   $DeployPopupCanvasLayer/CancelButton.visible = i_visible
+   $DeployPopupCanvasLayer/ConfirmButton.visible = i_visible
    
 ## Attack Popup ######################################################################################################## Attack Popup
 func is_attack_popup_showing() -> bool:
