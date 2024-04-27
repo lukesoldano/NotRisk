@@ -129,9 +129,14 @@ func _on_deploy_state_entered() -> void:
                       " entered phase: " + 
                       Types.TurnPhase.keys()[self.__active_turn_phase])
                      
-   self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = 3 # TODO: Update
+   self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = Utilities.get_num_reinforcements_earned($GameBoard.CONTINENTS, $GameBoard.CONTINENT_BONUSES, self.__player_occupations[self.__players[self.__active_player_index]])
+   
+   $GameBoardHUD.show_deploy_reinforcements_remaining(self.__players[self.__active_player_index], self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
+   
+func _on_deploy_state_exited() -> void:
+   $GameBoardHUD.hide_deploy_reinforcements_remaining()
    
 ## Deploy (Idle) Subphase ############################################################################################## Deploy (Idle) Subphase
 func _on_deploy_idle_state_entered() -> void:
@@ -154,12 +159,6 @@ func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String)
    assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
    
    var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
-   
-   if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
-      self.__state_machine_metadata.erase(self.__DESTINATION_COUNTRY_KEY)
-      
-   if self.__state_machine_metadata.has(self.__NUM_UNITS_KEY):
-      self.__state_machine_metadata.erase(self.__NUM_UNITS_KEY)
       
    if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
       Logger.log_error("DeployIdle: Local player selected country: " + 
@@ -192,7 +191,9 @@ func _on_deploy_deploying_state_entered() -> void:
    var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
                     
    if self.__active_player_index == self.__local_player_index:
-      pass
+      $GameBoardHUD.connect("deploy_cancel_requested", self._on_deploy_cancel_requested)
+      $GameBoardHUD.connect("deploy_confirm_requested", self._on_deploy_confirm_requested)
+      $GameBoardHUD.connect("deploy_troop_count_change_requested", self._on_deploy_troop_count_change_requested)
       
    self.__state_machine_metadata[self.__NUM_UNITS_KEY] = REINFORCEMENTS_REMAINING
       
@@ -203,8 +204,16 @@ func _on_deploy_deploying_state_entered() -> void:
                                    REINFORCEMENTS_REMAINING)
 
 func _on_deploy_deploying_state_exited() -> void:
+   if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
+      self.__state_machine_metadata.erase(self.__DESTINATION_COUNTRY_KEY)
+      
+   if self.__state_machine_metadata.has(self.__NUM_UNITS_KEY):
+      self.__state_machine_metadata.erase(self.__NUM_UNITS_KEY)
+   
    if self.__active_player_index == self.__local_player_index:
-      pass
+      $GameBoardHUD.disconnect("deploy_cancel_requested", self._on_deploy_cancel_requested)
+      $GameBoardHUD.disconnect("deploy_confirm_requested", self._on_deploy_confirm_requested)
+      $GameBoardHUD.disconnect("deploy_troop_count_change_requested", self._on_deploy_troop_count_change_requested)
       
    $GameBoardHUD.hide_deploy_popup()
    
@@ -212,6 +221,61 @@ func _on_deploy_deploying_state_input(event: InputEvent) -> void:
    if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
       if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
          $PlayerTurnStateMachine.send_event("DeployingToIdle")
+         
+func _on_deploy_cancel_requested() -> void:
+   $PlayerTurnStateMachine.send_event("DeployingToIdle")
+   
+func _on_deploy_confirm_requested() -> void:
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Deploy country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_UNITS_KEY), "Deploy troop count not set previously!")
+   
+   var reinforcements_remaining: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
+   var DEPLOY_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   var UNITS_TO_DEPLOY: int = self.__state_machine_metadata[self.__NUM_UNITS_KEY]
+   
+   assert(reinforcements_remaining >= UNITS_TO_DEPLOY, "More units to be deployed than reinforcements remaining!")
+   
+   reinforcements_remaining -= UNITS_TO_DEPLOY
+   
+   self.__deployments[DEPLOY_COUNTRY].troop_count += UNITS_TO_DEPLOY
+   $GameBoard.set_country_deployment(DEPLOY_COUNTRY, self.__deployments[DEPLOY_COUNTRY])
+   
+   self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = reinforcements_remaining
+   
+   $GameBoardHUD.show_deploy_reinforcements_remaining(self.__players[self.__active_player_index], reinforcements_remaining)
+   
+   $PlayerTurnStateMachine.send_event("DeployingToIdle")
+   
+func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_count: int) -> void:
+   if old_troop_count == new_troop_count or new_troop_count == 0:
+      return
+   
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Deploy country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_UNITS_KEY), "Deploy troop count not set previously!")
+   
+   var DEPLOY_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
+   var UNITS_TO_DEPLOY: int = self.__state_machine_metadata[self.__NUM_UNITS_KEY]
+   
+   if UNITS_TO_DEPLOY == new_troop_count:
+      return
+      
+   if REINFORCEMENTS_REMAINING < new_troop_count:
+      Logger.log_error("DeployTroopCountChangeRequested: New troop count: " + 
+                       str(new_troop_count) + 
+                       " is greater than reinforcements remaining: " +
+                       str(REINFORCEMENTS_REMAINING))
+      return
+      
+   self.__state_machine_metadata[self.__NUM_UNITS_KEY] = new_troop_count
+   
+   $GameBoardHUD.show_deploy_popup(self.__active_player_index == self.__local_player_index, 
+                                   self.__players[self.__active_player_index], 
+                                   DEPLOY_COUNTRY, 
+                                   new_troop_count, 
+                                   REINFORCEMENTS_REMAINING)
    
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
@@ -606,4 +670,3 @@ func _on_end_state_entered() -> void:
    $PlayerTurnStateMachine.send_event("EndToStart")
 
 ########################################################################################################################
-

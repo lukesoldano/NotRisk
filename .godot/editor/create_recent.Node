@@ -1,8 +1,8 @@
-Button
+Label
 CanvasLayer
+Button
 Sprite2D
 AnimatedSprite2D
-Label
 ColorRect
 AtomicState
 CompoundState

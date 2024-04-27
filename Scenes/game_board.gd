@@ -7,6 +7,24 @@ class_name GameBoard
 signal next_phase_requested()
 signal country_clicked(country: Types.Country, action_tag: String)
 
+const CONTINENTS: Dictionary = {
+   Types.Continent.AFRICA: [Types.Country.CONGO, Types.Country.EAST_AFRICA, Types.Country.EGYPT, Types.Country.MADAGASCAR, Types.Country.NORTH_AFRICA, Types.Country.SOUTH_AFRICA],
+   Types.Continent.ASIA: [Types.Country.AFGHANISTAN, Types.Country.CHINA, Types.Country.INDIA, Types.Country.IRKUTSK, Types.Country.JAPAN, Types.Country.KAMCHATKA, Types.Country.MIDDLE_EAST, Types.Country.MONGOLIA, Types.Country.SIAM, Types.Country.SIBERIA, Types.Country.URAL, Types.Country.YAKUTSK],
+   Types.Continent.AUSTRALIA: [Types.Country.EASTERN_AUSTRALIA, Types.Country.INDONESIA, Types.Country.NEW_GUINEA, Types.Country.WESTERN_AUSTRALIA],
+   Types.Continent.EUROPE: [Types.Country.GREAT_BRITAIN, Types.Country.ICELAND, Types.Country.NORTHERN_EUROPE, Types.Country.SCANDINAVIA, Types.Country.SOUTHERN_EUROPE, Types.Country.UKRAINE, Types.Country.WESTERN_EUROPE],
+   Types.Continent.NORTH_AMERICA: [Types.Country.ALASKA, Types.Country.ALBERTA, Types.Country.CENTRAL_AMERICA, Types.Country.EASTERN_UNITED_STATES, Types.Country.GREENLAND, Types.Country.NORTHWEST_TERRITORY, Types.Country.ONTARIO, Types.Country.QUEBEC, Types.Country.WESTERN_UNITED_STATES],
+   Types.Continent.SOUTH_AMERICA: [Types.Country.ARGENTINA, Types.Country.BRAZIL, Types.Country.PERU, Types.Country.VENEZUELA]
+}
+
+const CONTINENT_BONUSES: Dictionary = {
+   Types.Continent.AFRICA: 3,
+   Types.Continent.ASIA: 7,
+   Types.Continent.AUSTRALIA: 2,
+   Types.Continent.EUROPE: 5,
+   Types.Continent.NORTH_AMERICA: 5,
+   Types.Continent.SOUTH_AMERICA: 2
+}
+
 @onready var __country_node_map: Dictionary = { 
    Types.Country.AFGHANISTAN: $Continents/Asia/Afghanistan,
    Types.Country.ALASKA: $Continents/NorthAmerica/Alaska,
@@ -57,7 +75,7 @@ func _ready():
    
    for node in self.__country_node_map:
       self.__country_node_map[node].connect("clicked", self._on_country_clicked)
-
+      
 # Dictionary should be in format { country: Country, Deployment }
 func populate(deployments: Dictionary) -> bool:
    for country in deployments:

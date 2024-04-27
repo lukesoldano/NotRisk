@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://cf7w6o55pepoh"]
+[gd_scene load_steps=28 format=3 uid="uid://cf7w6o55pepoh"]
 
 [ext_resource type="Script" path="res://Scenes/game_board_hud.gd" id="1_0m68m"]
 [ext_resource type="Texture2D" uid="uid://dh4nkpli41k7r" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark24.png" id="2_ds0wd"]
@@ -11,6 +11,9 @@ variation_embolden = 0.75
 
 [sub_resource type="LabelSettings" id="LabelSettings_qwubm"]
 font = SubResource("FontVariation_jhcjv")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_p2rhw"]
 font_size = 32
 
 [sub_resource type="LabelSettings" id="LabelSettings_vpvu0"]
@@ -78,7 +81,30 @@ default_font_size = 32
 [node name="GameBoardHUD" type="CanvasLayer"]
 script = ExtResource("1_0m68m")
 
+[node name="DeployReinforcementsRemainingCanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ReinforcementsRemainingLabel" type="Label" parent="DeployReinforcementsRemainingCanvasLayer"]
+offset_left = 704.0
+offset_top = 960.0
+offset_right = 1216.0
+offset_bottom = 1021.0
+text = "Reinforcements Remaining"
+label_settings = SubResource("LabelSettings_qwubm")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReinforcementsRemainingCountLabel" type="Label" parent="DeployReinforcementsRemainingCanvasLayer"]
+offset_left = 704.0
+offset_top = 1024.0
+offset_right = 1216.0
+offset_bottom = 1069.0
+text = "100"
+label_settings = SubResource("LabelSettings_p2rhw")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="DeployPopupCanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="Background" type="ColorRect" parent="DeployPopupCanvasLayer"]
 offset_left = 704.0
@@ -156,14 +182,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="CancelButton" type="Button" parent="DeployPopupCanvasLayer"]
-offset_left = 968.0
-offset_top = 704.0
-offset_right = 1192.0
-offset_bottom = 765.0
-theme = SubResource("Theme_5u307")
-text = "Confirm"
-
-[node name="ConfirmButton" type="Button" parent="DeployPopupCanvasLayer"]
 offset_left = 728.0
 offset_top = 704.0
 offset_right = 952.0
@@ -171,8 +189,15 @@ offset_bottom = 765.0
 theme = SubResource("Theme_5u307")
 text = "Cancel"
 
+[node name="ConfirmButton" type="Button" parent="DeployPopupCanvasLayer"]
+offset_left = 968.0
+offset_top = 704.0
+offset_right = 1192.0
+offset_bottom = 765.0
+theme = SubResource("Theme_5u307")
+text = "Confirm"
+
 [node name="AttackPopupCanvasLayer" type="CanvasLayer" parent="."]
-visible = false
 
 [node name="Background" type="ColorRect" parent="AttackPopupCanvasLayer"]
 offset_left = 512.0
@@ -461,6 +486,10 @@ offset_bottom = 893.0
 theme = SubResource("Theme_5u307")
 text = "Confirm"
 
+[connection signal="pressed" from="DeployPopupCanvasLayer/ReduceTroopsButton" to="." method="_on_deploy_reduce_troops_button_pressed"]
+[connection signal="pressed" from="DeployPopupCanvasLayer/IncreaseTroopsButton" to="." method="_on_deploy_increase_troops_button_pressed"]
+[connection signal="pressed" from="DeployPopupCanvasLayer/CancelButton" to="." method="_on_deploy_cancel_button_pressed"]
+[connection signal="pressed" from="DeployPopupCanvasLayer/ConfirmButton" to="." method="_on_deploy_confirm_button_pressed"]
 [connection signal="pressed" from="AttackPopupCanvasLayer/QuitButton" to="." method="_on_attack_quit_button_pressed"]
 [connection signal="pressed" from="AttackPopupCanvasLayer/RollButton" to="." method="_on_attack_roll_button_pressed"]
 [connection signal="pressed" from="AttackPopupCanvasLayer/ReduceAttackDieButton" to="." method="_on_reduce_attack_die_button_pressed"]

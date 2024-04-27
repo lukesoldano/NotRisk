@@ -4,7 +4,7 @@ extends CanvasLayer
 
 class_name GameBoardHUD
 
-signal deploy_quit_requested()
+signal deploy_cancel_requested()
 signal deploy_confirm_requested()
 signal deploy_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
 
@@ -22,9 +22,26 @@ const __DEFAULT_VALUE_COLOR = Color.WHITE
 @onready var __defend_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/DefenderDie1, $AttackPopupCanvasLayer/DefenderDie2]
 
 func _ready():
+   self.hide_deploy_reinforcements_remaining()
    self.hide_deploy_popup()
    self.hide_attack_popup()
    self.hide_victory_popup()
+   
+## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
+func is_deploy_reinforcements_remaining_showing() -> bool:
+   return $DeployReinforcementsRemainingCanvasLayer.visible
+   
+func show_deploy_reinforcements_remaining(player: Types.Player, reinforcements_remaining: int) -> void:
+   $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.text = str(reinforcements_remaining)
+   $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.label_settings.font_color = player.army_color
+   
+   $DeployReinforcementsRemainingCanvasLayer.visible = true
+   
+func hide_deploy_reinforcements_remaining() -> void:
+   $DeployReinforcementsRemainingCanvasLayer.visible = false
+   
+   $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.text = self.__DEFAULT_VALUE_STR
+   $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
    
 ## Deploy Popup ######################################################################################################## Deploy Popup
 func is_deploy_popup_showing() -> bool:
@@ -57,6 +74,24 @@ func show_deploy_popup_user_inputs(i_visible: bool):
    $DeployPopupCanvasLayer/IncreaseTroopsButton.visible = i_visible
    $DeployPopupCanvasLayer/CancelButton.visible = i_visible
    $DeployPopupCanvasLayer/ConfirmButton.visible = i_visible
+   
+func _on_deploy_reduce_troops_button_pressed() -> void:
+   Logger.log_message("Reduce troop deployment count requested")
+   var current_troop_count = int($DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text)
+   self.deploy_troop_count_change_requested.emit(current_troop_count, current_troop_count - 1)
+
+func _on_deploy_increase_troops_button_pressed() -> void:
+   Logger.log_message("Increase troop deployment count requested")
+   var current_troop_count = int($DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text)
+   self.deploy_troop_count_change_requested.emit(current_troop_count, current_troop_count + 1)
+
+func _on_deploy_cancel_button_pressed() -> void:
+   Logger.log_message("Cancel deploy requested")
+   self.deploy_cancel_requested.emit()
+
+func _on_deploy_confirm_button_pressed() -> void:
+   Logger.log_message("Confirm deploy requested")
+   self.deploy_confirm_requested.emit()
    
 ## Attack Popup ######################################################################################################## Attack Popup
 func is_attack_popup_showing() -> bool:
@@ -252,3 +287,4 @@ func _on_victory_confirm_button_pressed() -> void:
    var troop_count = $VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.text
    Logger.log_message("Confirm post-victory troop movement requested with troop count: " + troop_count)
    self.post_victory_troop_movement_confirm_requested.emit()
+

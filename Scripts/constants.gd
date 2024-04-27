@@ -1,5 +1,8 @@
 class_name Constants
 
+const MIN_NUM_REINFORCEMENTS: int = 3
+const COUNTRY_REINFORCEMENTS_DIVISOR: int = 3
+
 const MAX_NUM_ATTACK_DIE: int = 3
 const MAX_NUM_DEFEND_DIE: int = 2
 
