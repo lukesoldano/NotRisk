@@ -12,11 +12,14 @@ signal attack_quit_requested()
 signal attack_roll_requested()
 signal attack_die_count_change_requested(old_num_dice: int, new_num_dice: int)
 
-signal post_victory_troop_movement_confirm_requested()
-signal post_victory_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
+signal troop_movement_confirm_requested()
+signal troop_movement_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
 
 const __DEFAULT_VALUE_STR = "-"
 const __DEFAULT_VALUE_COLOR = Color.WHITE
+
+const __VICTORY_TITLE_STR = "Victory!"
+const __REINFORCE_TITLE_STR = "Reinforce"
 
 @onready var __attack_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/AttackerDie1, $AttackPopupCanvasLayer/AttackerDie2, $AttackPopupCanvasLayer/AttackerDie3]
 @onready var __defend_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/DefenderDie1, $AttackPopupCanvasLayer/DefenderDie2]
@@ -25,7 +28,7 @@ func _ready():
    self.hide_deploy_reinforcements_remaining()
    self.hide_deploy_popup()
    self.hide_attack_popup()
-   self.hide_victory_popup()
+   self.hide_troop_movement_popup()
    
 ## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
 func is_deploy_reinforcements_remaining_showing() -> bool:
@@ -76,21 +79,21 @@ func show_deploy_popup_user_inputs(i_visible: bool):
    $DeployPopupCanvasLayer/ConfirmButton.visible = i_visible
    
 func _on_deploy_reduce_troops_button_pressed() -> void:
-   Logger.log_message("Reduce troop deployment count requested")
+   Logger.log_message("LocalPlayer: Reduce troop deployment count requested")
    var current_troop_count = int($DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text)
    self.deploy_troop_count_change_requested.emit(current_troop_count, current_troop_count - 1)
 
 func _on_deploy_increase_troops_button_pressed() -> void:
-   Logger.log_message("Increase troop deployment count requested")
+   Logger.log_message("LocalPlayer: Increase troop deployment count requested")
    var current_troop_count = int($DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text)
    self.deploy_troop_count_change_requested.emit(current_troop_count, current_troop_count + 1)
 
 func _on_deploy_cancel_button_pressed() -> void:
-   Logger.log_message("Cancel deploy requested")
+   Logger.log_message("LocalPlayer: Cancel deploy requested")
    self.deploy_cancel_requested.emit()
 
 func _on_deploy_confirm_button_pressed() -> void:
-   Logger.log_message("Confirm deploy requested")
+   Logger.log_message("LocalPlayer: Confirm deploy requested")
    self.deploy_confirm_requested.emit()
    
 ## Attack Popup ######################################################################################################## Attack Popup
@@ -126,7 +129,7 @@ func show_attack_popup(is_local_player_attacking: bool,
    $AttackPopupCanvasLayer/DefenderNumDiceCountLabel.label_settings.font_color = DEFENDER_COLOR
    
    $AttackPopupCanvasLayer.visible = true
-   self.show_attack_popup_user_inputs(is_local_player_attacking)
+   self.show_troop_movement_user_inputs(is_local_player_attacking)
    
 func hide_attack_popup() -> void:
    $AttackPopupCanvasLayer.visible = false
@@ -149,7 +152,7 @@ func hide_attack_popup() -> void:
    $AttackPopupCanvasLayer/DefenderNumDiceCountLabel.text = self.__DEFAULT_VALUE_STR
    $AttackPopupCanvasLayer/DefenderNumDiceCountLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
    
-func show_attack_popup_user_inputs(i_visible: bool) -> void:
+func show_troop_movement_user_inputs(i_visible: bool) -> void:
    if $AttackPopupCanvasLayer.visible:
       $AttackPopupCanvasLayer/QuitButton.visible = i_visible
       $AttackPopupCanvasLayer/RollButton.visible = i_visible
@@ -188,26 +191,19 @@ func update_defend_die_count(count: int) -> void:
          self.__defend_die_nodes[die_num].visible = false
          
 func __update_attack_die_arrows(current_num_dice: int, max_possible_dice: int) -> void:
-   if current_num_dice == 1:
-      $AttackPopupCanvasLayer/ReduceAttackDieButton.disabled = true
-      $AttackPopupCanvasLayer/IncreaseAttackDieButton.disabled = false
-   elif current_num_dice == 2:
-      $AttackPopupCanvasLayer/ReduceAttackDieButton.disabled = false
-      $AttackPopupCanvasLayer/IncreaseAttackDieButton.disabled = false
-   else:
-      $AttackPopupCanvasLayer/ReduceAttackDieButton.disabled = false
-      $AttackPopupCanvasLayer/IncreaseAttackDieButton.disabled = true
+   $AttackPopupCanvasLayer/ReduceAttackDieButton.disabled = current_num_dice == 1
+   $AttackPopupCanvasLayer/IncreaseAttackDieButton.disabled = max_possible_dice == current_num_dice
 
 func _on_attack_quit_button_pressed() -> void:
-   Logger.log_message("Quit attack requested")
+   Logger.log_message("LocalPlayer: Quit attack requested")
    self.attack_quit_requested.emit()
 
 func _on_attack_roll_button_pressed() -> void:
-   Logger.log_message("Attack roll requested")
+   Logger.log_message("LocalPlayer: Attack roll requested")
    self.attack_roll_requested.emit()
 
 func _on_reduce_attack_die_button_pressed() -> void:
-   Logger.log_message("Attack die decrease requested")
+   Logger.log_message("LocalPlayer: Attack die decrease requested")
    
    var old_count = 0
    for die_num in self.__attack_die_nodes.size():
@@ -219,7 +215,7 @@ func _on_reduce_attack_die_button_pressed() -> void:
    self.attack_die_count_change_requested.emit(old_count, old_count - 1)
 
 func _on_increase_attack_die_button_pressed() -> void:
-   Logger.log_message("Attack die increase requested")
+   Logger.log_message("LocalPlayer: Attack die increase requested")
    
    var old_count = 0
    for die_num in self.__attack_die_nodes.size():
@@ -230,61 +226,72 @@ func _on_increase_attack_die_button_pressed() -> void:
          
    self.attack_die_count_change_requested.emit(old_count, old_count + 1)
 
-## Victory Popup ####################################################################################################### Victory Popup
-func is_victory_popup_showing() -> bool:
-   return $VictoryPopupCanvasLayer.visible
+## Troop Movement Popup ############################################################################ Troop Movement Popup
+func is_troop_movement_popup_showing() -> bool:
+   return $TroopMovementPopupCanvasLayer.visible
    
-func show_victory_popup(is_local_player: bool, 
-                        attacking_occupation: Types.Occupation, 
-                        conquered_country: Types.Country, 
-                        troops_to_move: int,
-                        min_troops_to_move: int,
-                        max_troops_to_move: int) -> void:
+func show_troop_movement_popup(is_local_player: bool, 
+                               movement_type: Types.TroopMovementType,
+                               src_occupation: Types.Occupation, 
+                               dest_country: Types.Country, 
+                               troops_to_move: int,
+                               min_troops_moveable: int,
+                               max_troops_moveable: int) -> void:
+
+   match movement_type:
+      Types.TroopMovementType.POST_VICTORY:
+         $TroopMovementPopupCanvasLayer/TitleLabel.text = self.__VICTORY_TITLE_STR
+      Types.TroopMovementType.REINFORCE:
+         $TroopMovementPopupCanvasLayer/TitleLabel.text = self.__REINFORCE_TITLE_STR
+      _:
+         assert(false, "Invalid movement type provided!")
+         return
                            
-   $VictoryPopupCanvasLayer/MoveFromCountryLabel.text = Types.Country.keys()[attacking_occupation.country]
-   $VictoryPopupCanvasLayer/MoveFromCountryLabel.label_settings.font_color = attacking_occupation.deployment.player.army_color
+   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.text = Types.Country.keys()[src_occupation.country]
+   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.label_settings.font_color = src_occupation.deployment.player.army_color
    
-   $VictoryPopupCanvasLayer/MoveToCountryLabel.text = Types.Country.keys()[conquered_country]
-   $VictoryPopupCanvasLayer/MoveToCountryLabel.label_settings.font_color = attacking_occupation.deployment.player.army_color
+   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.text = Types.Country.keys()[dest_country]
+   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.label_settings.font_color = src_occupation.deployment.player.army_color
    
-   $VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.text = str(troops_to_move)
-   $VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.label_settings.font_color = attacking_occupation.deployment.player.army_color
+   $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text = str(troops_to_move)
+   $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.label_settings.font_color = src_occupation.deployment.player.army_color
    
-   $VictoryPopupCanvasLayer/ReduceTroopsButton.disabled = troops_to_move == min_troops_to_move
-   $VictoryPopupCanvasLayer/IncreaseTroopsButton.disabled = troops_to_move == max_troops_to_move
+   $TroopMovementPopupCanvasLayer/ReduceTroopsButton.disabled = troops_to_move == min_troops_moveable
+   $TroopMovementPopupCanvasLayer/IncreaseTroopsButton.disabled = troops_to_move == max_troops_moveable
    
-   $VictoryPopupCanvasLayer.visible = true
-   self.show_victory_popup_user_inputs(is_local_player)
+   $TroopMovementPopupCanvasLayer.visible = true
+   self.show_troop_movement_popup_user_inputs(is_local_player)
 
-func hide_victory_popup() -> void:
-   $VictoryPopupCanvasLayer.visible = false
-   
-   $VictoryPopupCanvasLayer/MoveFromCountryLabel.text = self.__DEFAULT_VALUE_STR
-   $VictoryPopupCanvasLayer/MoveFromCountryLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
-   
-   $VictoryPopupCanvasLayer/MoveToCountryLabel.text = self.__DEFAULT_VALUE_STR
-   $VictoryPopupCanvasLayer/MoveToCountryLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
-   
-   $VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.text = self.__DEFAULT_VALUE_STR
-   $VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
-   
-func show_victory_popup_user_inputs(i_visible: bool):
-   $VictoryPopupCanvasLayer/ReduceTroopsButton.visible = i_visible
-   $VictoryPopupCanvasLayer/IncreaseTroopsButton.visible = i_visible
-   $VictoryPopupCanvasLayer/ConfirmButton.visible = i_visible
+func hide_troop_movement_popup() -> void:
+   $TroopMovementPopupCanvasLayer.visible = false
 
-func _on_victory_reduce_troops_button_pressed() -> void:
-   Logger.log_message("Reduce post-victory troop movement requested")
-   var current_troop_count = int($VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.text)
-   self.post_victory_troop_count_change_requested.emit(current_troop_count, current_troop_count - 1)
+   $TroopMovementPopupCanvasLayer/TitleLabel.text = self.__DEFAULT_VALUE_STR
+   
+   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.text = self.__DEFAULT_VALUE_STR
+   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
+   
+   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.text = self.__DEFAULT_VALUE_STR
+   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
+   
+   $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text = self.__DEFAULT_VALUE_STR
+   $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.label_settings.font_color = self.__DEFAULT_VALUE_COLOR
+   
+func show_troop_movement_popup_user_inputs(i_visible: bool):
+   $TroopMovementPopupCanvasLayer/ReduceTroopsButton.visible = i_visible
+   $TroopMovementPopupCanvasLayer/IncreaseTroopsButton.visible = i_visible
+   $TroopMovementPopupCanvasLayer/ConfirmButton.visible = i_visible
 
-func _on_victory_increase_troops_button_pressed() -> void:
-   Logger.log_message("Increase post-victory troop movement requested")
-   var current_troop_count = int($VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.text)
-   self.post_victory_troop_count_change_requested.emit(current_troop_count, current_troop_count + 1)
+func _on_troop_movement_reduce_troops_button_pressed() -> void:
+   Logger.log_message("LocalPlayer: Reduce post-victory troop movement requested")
+   var current_troop_count = int($TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text)
+   self.troop_movement_troop_count_change_requested.emit(current_troop_count, current_troop_count - 1)
 
-func _on_victory_confirm_button_pressed() -> void:
-   var troop_count = $VictoryPopupCanvasLayer/ArmiesToMoveCountLabel.text
-   Logger.log_message("Confirm post-victory troop movement requested with troop count: " + troop_count)
-   self.post_victory_troop_movement_confirm_requested.emit()
+func _on_troop_movement_increase_troops_button_pressed() -> void:
+   Logger.log_message("LocalPlayer: Increase post-victory troop movement requested")
+   var current_troop_count = int($TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text)
+   self.troop_movement_troop_count_change_requested.emit(current_troop_count, current_troop_count + 1)
 
+func _on_troop_movement_confirm_button_pressed() -> void:
+   var troop_count = $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text
+   Logger.log_message("LocalPlayer: Confirm post-victory troop movement requested with troop count: " + troop_count)
+   self.troop_movement_confirm_requested.emit()

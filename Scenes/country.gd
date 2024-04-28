@@ -21,11 +21,11 @@ func set_deployment(deployment: Types.Deployment) -> void:
    $OccupationWidget.set_color(deployment.player.army_color)
    $OccupationWidget.set_count(deployment.troop_count)
    
-func is_neighboring(country: Types.Country) -> bool:
-   return self.neighbors.count(country)
+func is_neighboring(i_country: Types.Country) -> bool:
+   return self.neighbors.count(i_country)
 
 func _on_occupation_widget_clicked(action_tag):
-   var message = Types.Country.keys()[country] + ": was clicked with type: " + action_tag
+   var message = "LocalPlayer: " + Types.Country.keys()[country] + ": was clicked with type: " + action_tag
    Logger.log_message(message)
    
    self.clicked.emit(self.country, action_tag)

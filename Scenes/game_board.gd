@@ -112,7 +112,7 @@ func _on_turn_phase_updated(player: Types.Player, phase: Types.TurnPhase) -> voi
    $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + Types.TurnPhase.keys()[phase]
 
 func _on_next_phase_button_pressed() -> void:
-   Logger.log_message("Next phase requested")
+   Logger.log_message("LocalPlayer: Next phase requested")
    self.next_phase_requested.emit()
    
 func _on_country_clicked(country: Types.Country, action_tag: String) -> void:

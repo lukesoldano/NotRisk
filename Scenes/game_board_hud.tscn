@@ -82,6 +82,7 @@ default_font_size = 32
 script = ExtResource("1_0m68m")
 
 [node name="DeployReinforcementsRemainingCanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="ReinforcementsRemainingLabel" type="Label" parent="DeployReinforcementsRemainingCanvasLayer"]
 offset_left = 704.0
@@ -198,6 +199,7 @@ theme = SubResource("Theme_5u307")
 text = "Confirm"
 
 [node name="AttackPopupCanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="Background" type="ColorRect" parent="AttackPopupCanvasLayer"]
 offset_left = 512.0
@@ -380,17 +382,16 @@ sprite_frames = ExtResource("3_yx54i")
 position = Vector2(1232, 704)
 sprite_frames = ExtResource("3_yx54i")
 
-[node name="VictoryPopupCanvasLayer" type="CanvasLayer" parent="."]
-visible = false
+[node name="TroopMovementPopupCanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="Background" type="ColorRect" parent="VictoryPopupCanvasLayer"]
+[node name="Background" type="ColorRect" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 704.0
 offset_top = 232.0
 offset_right = 1216.0
 offset_bottom = 920.0
 color = Color(0, 0, 0, 0.752941)
 
-[node name="VictoryLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="TitleLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 640.0
 offset_top = 256.0
 offset_right = 1280.0
@@ -400,7 +401,7 @@ label_settings = SubResource("LabelSettings_qwubm")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MoveFromLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="MoveFromLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 704.0
 offset_top = 384.0
 offset_right = 1216.0
@@ -410,7 +411,7 @@ label_settings = SubResource("LabelSettings_qwubm")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MoveFromCountryLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="MoveFromCountryLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 704.0
 offset_top = 448.0
 offset_right = 1216.0
@@ -420,7 +421,7 @@ label_settings = SubResource("LabelSettings_vpvu0")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MoveToLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="MoveToLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 704.0
 offset_top = 512.0
 offset_right = 1216.0
@@ -430,7 +431,7 @@ label_settings = SubResource("LabelSettings_7xrpd")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MoveToCountryLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="MoveToCountryLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 704.0
 offset_top = 576.0
 offset_right = 1216.0
@@ -440,7 +441,7 @@ label_settings = SubResource("LabelSettings_ht7ep")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ReduceTroopsButton" type="Button" parent="VictoryPopupCanvasLayer"]
+[node name="ReduceTroopsButton" type="Button" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 840.0
 offset_top = 712.0
 offset_right = 888.0
@@ -449,7 +450,7 @@ icon = ExtResource("2_ds0wd")
 flat = true
 expand_icon = true
 
-[node name="IncreaseTroopsButton" type="Button" parent="VictoryPopupCanvasLayer"]
+[node name="IncreaseTroopsButton" type="Button" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 1032.0
 offset_top = 712.0
 offset_right = 1080.0
@@ -458,7 +459,7 @@ icon = ExtResource("3_5a8i7")
 flat = true
 expand_icon = true
 
-[node name="ArmiesToMoveLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="ArmiesToMoveLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 704.0
 offset_top = 640.0
 offset_right = 1216.0
@@ -468,7 +469,7 @@ label_settings = SubResource("LabelSettings_qwubm")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ArmiesToMoveCountLabel" type="Label" parent="VictoryPopupCanvasLayer"]
+[node name="ArmiesToMoveCountLabel" type="Label" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 896.0
 offset_top = 704.0
 offset_right = 1024.0
@@ -478,7 +479,7 @@ label_settings = SubResource("LabelSettings_vpvu0")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ConfirmButton" type="Button" parent="VictoryPopupCanvasLayer"]
+[node name="ConfirmButton" type="Button" parent="TroopMovementPopupCanvasLayer"]
 offset_left = 848.0
 offset_top = 832.0
 offset_right = 1072.0
@@ -494,6 +495,6 @@ text = "Confirm"
 [connection signal="pressed" from="AttackPopupCanvasLayer/RollButton" to="." method="_on_attack_roll_button_pressed"]
 [connection signal="pressed" from="AttackPopupCanvasLayer/ReduceAttackDieButton" to="." method="_on_reduce_attack_die_button_pressed"]
 [connection signal="pressed" from="AttackPopupCanvasLayer/IncreaseAttackDieButton" to="." method="_on_increase_attack_die_button_pressed"]
-[connection signal="pressed" from="VictoryPopupCanvasLayer/ReduceTroopsButton" to="." method="_on_victory_reduce_troops_button_pressed"]
-[connection signal="pressed" from="VictoryPopupCanvasLayer/IncreaseTroopsButton" to="." method="_on_victory_increase_troops_button_pressed"]
-[connection signal="pressed" from="VictoryPopupCanvasLayer/ConfirmButton" to="." method="_on_victory_confirm_button_pressed"]
+[connection signal="pressed" from="TroopMovementPopupCanvasLayer/ReduceTroopsButton" to="." method="_on_troop_movement_reduce_troops_button_pressed"]
+[connection signal="pressed" from="TroopMovementPopupCanvasLayer/IncreaseTroopsButton" to="." method="_on_troop_movement_increase_troops_button_pressed"]
+[connection signal="pressed" from="TroopMovementPopupCanvasLayer/ConfirmButton" to="." method="_on_troop_movement_confirm_button_pressed"]

@@ -84,6 +84,20 @@ enum AttackTurnSubPhase
    VICTORY = 4
 }
 
+# Needed for signal output to UI
+enum ReinforceTurnSubPhase
+{
+   IDLE = 0,
+   SOURCE_SELECTED = 1,
+   DESTINATION_SELECTED = 2
+}
+
+enum TroopMovementType
+{
+   POST_VICTORY = 0,
+   REINFORCE = 1
+}
+
 class Player:
    var user_name: String = "DEFAULT NAME"
    var army_color: Color = Color.WHITE

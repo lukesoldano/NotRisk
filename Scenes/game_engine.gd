@@ -28,7 +28,9 @@ const __NUM_UNITS_KEY = "troop_count"
 const __REINFORCEMENTS_REMAINING_KEY = "reinforcements_remaining"
 const __NUM_ATTACKER_DICE_KEY = "num_attack_dice"
 const __NUM_DEFENDER_DICE_KEY = "num_defense_dice"
-const __NUM_ATTACKERS_TO_MOVE_KEY = "num_attackers_to_move"
+const __NUM_TROOPS_TO_MOVE_KEY = "num_troops_to_move"
+const __NUM_REINFORCE_MOVEMENTS_UTILIZED = "num_reinforces_utilized"
+const __COUNTRIES_CONQUERED_KEY = "countries_counquered"
 var __state_machine_metadata: Dictionary = {}
 
 #func _init(players: Array[Types.Player]):
@@ -86,7 +88,20 @@ func __generate_random_deployments() -> void:
       while remaining_troop_count[player] > 0:
          self.__deployments[self.__player_occupations[player][randi() % self.__player_occupations[player].size()]].troop_count += 1
          remaining_troop_count[player] -= 1
-         
+    
+########################################################################################################################
+## State Machine Logic ################################################################################################# Start State Machine Logic     
+########################################################################################################################
+
+# Clears all state machine metadata that shouldn't persist between phases of a turn
+func __clear_interphase_state_machine_metadata():
+   var countries_conquered: int = 0
+   if self.__state_machine_metadata.has(self.__COUNTRIES_CONQUERED_KEY):
+      countries_conquered = self.__state_machine_metadata[self.__COUNTRIES_CONQUERED_KEY]
+      
+   self.__state_machine_metadata.clear()
+   self.__state_machine_metadata[self.__COUNTRIES_CONQUERED_KEY] = countries_conquered
+
 func _on_next_phase_requested() -> void:
    if self.__local_player_index != self.__active_player_index:
       return
@@ -94,8 +109,19 @@ func _on_next_phase_requested() -> void:
    match self.__active_turn_phase:
       Types.TurnPhase.START:
          $PlayerTurnStateMachine.send_event("StartToDeploy")
+         
       Types.TurnPhase.DEPLOY:
+         assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
+         
+         var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
+         if REINFORCEMENTS_REMAINING != 0:
+            Logger.log_error("_on_next_phase_requested: Local player requested next phase from deploy phase, but reinforcements remaining: " + 
+                             str(REINFORCEMENTS_REMAINING) + 
+                             " does not equal zero")
+            return
+            
          $PlayerTurnStateMachine.send_event("DeployToAttack")
+         
       Types.TurnPhase.ATTACK:
          $PlayerTurnStateMachine.send_event("AttackToReinforce")
       Types.TurnPhase.REINFORCE:
@@ -109,6 +135,8 @@ func _on_next_phase_requested() -> void:
 func _on_start_state_entered() -> void:
    self.__active_player_index = (self.__active_player_index + 1) % self.__players.size()
    self.__active_turn_phase = Types.TurnPhase.START
+   
+   # CLEAR ALL METADATA as we are entering a new player's turn
    self.__state_machine_metadata.clear()
    
    Logger.log_message("Player: " + 
@@ -122,7 +150,7 @@ func _on_start_state_entered() -> void:
 ## Deploy Phase ######################################################################################################## Deploy Phase
 func _on_deploy_state_entered() -> void:
    self.__active_turn_phase = Types.TurnPhase.DEPLOY
-   self.__state_machine_metadata.clear()
+   self.__clear_interphase_state_machine_metadata()
    
    Logger.log_message("Player: " + 
                       self.__players[self.__active_player_index].user_name + 
@@ -137,6 +165,8 @@ func _on_deploy_state_entered() -> void:
    
 func _on_deploy_state_exited() -> void:
    $GameBoardHUD.hide_deploy_reinforcements_remaining()
+   
+# TODO: Playing cards logic 
    
 ## Deploy (Idle) Subphase ############################################################################################## Deploy (Idle) Subphase
 func _on_deploy_idle_state_entered() -> void:
@@ -280,7 +310,7 @@ func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_cou
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
    self.__active_turn_phase = Types.TurnPhase.ATTACK
-   self.__state_machine_metadata.clear()
+   self.__clear_interphase_state_machine_metadata()
    
    Logger.log_message("Player: " + 
                       self.__players[self.__active_player_index].user_name + 
@@ -291,7 +321,7 @@ func _on_attack_state_entered() -> void:
    
 ## Attack (Idle) Subphase ############################################################################################## Attack (Idle) Subphase
 func _on_attack_idle_state_entered() -> void:
-   self.__state_machine_metadata.clear()
+   self.__clear_interphase_state_machine_metadata()
    
    Logger.log_message("Player: " + 
                       self.__players[self.__active_player_index].user_name + 
@@ -421,7 +451,7 @@ func _on_attack_destination_selected_state_exited() -> void:
       $GameBoardHUD.disconnect("attack_die_count_change_requested", self._on_attack_destination_selected_die_count_change_requested)
       
       if $GameBoardHUD.is_attack_popup_showing():
-         $GameBoardHUD.show_attack_popup_user_inputs(false)
+         $GameBoardHUD.show_troop_movement_user_inputs(false)
 
 func _on_attack_destination_selected_state_input(event) -> void:
    if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
@@ -446,6 +476,9 @@ func _on_attack_destination_selected_die_count_change_requested(old_num_dice: in
    var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
    
    var ATTACKING_OCCUPATION = Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY])
+   
+   if NUM_ATTACKER_DICE == new_num_dice:
+      return
    
    var MAX_DIE_COUNT = Utilities.get_max_attacker_die_count_for_troop_count(ATTACKING_OCCUPATION.deployment.troop_count)
    if new_num_dice < old_num_dice or MAX_DIE_COUNT >= new_num_dice:
@@ -561,30 +594,36 @@ func _on_attack_victory_state_entered() -> void:
    
    var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
    
-   self.__state_machine_metadata[self.__NUM_ATTACKERS_TO_MOVE_KEY] = NUM_ATTACKER_DICE
+   self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = NUM_ATTACKER_DICE
+   
+   if self.__state_machine_metadata.has(self.__COUNTRIES_CONQUERED_KEY):
+      self.__state_machine_metadata[self.__COUNTRIES_CONQUERED_KEY] += 1
+   else:
+      self.__state_machine_metadata[self.__COUNTRIES_CONQUERED_KEY] = 1
       
    # Only show popup if there is a choice to be made, otherwise just auto redeploy troops
    if self.__deployments[ATTACKING_COUNTRY].troop_count > (NUM_ATTACKER_DICE + 1):
       if self.__active_player_index == self.__local_player_index:
-         $GameBoardHUD.connect("post_victory_troop_count_change_requested", self._on_attack_victory_troop_count_change_requested)
-         $GameBoardHUD.connect("post_victory_troop_movement_confirm_requested", self._on_attack_victory_troop_movement_confirm_requested)
+         $GameBoardHUD.connect("troop_movement_troop_count_change_requested", self._on_attack_victory_troop_count_change_requested)
+         $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_attack_victory_troop_movement_confirm_requested)
          
-      $GameBoardHUD.show_victory_popup(self.__active_player_index == self.__local_player_index, 
-                                       Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY]), 
-                                       DEFENDING_COUNTRY, 
-                                       NUM_ATTACKER_DICE,
-                                       NUM_ATTACKER_DICE,
-                                       self.__deployments[ATTACKING_COUNTRY].troop_count - 1)
+      $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index, 
+                                              Types.TroopMovementType.POST_VICTORY,
+                                              Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY]), 
+                                              DEFENDING_COUNTRY, 
+                                              NUM_ATTACKER_DICE,
+                                              NUM_ATTACKER_DICE,
+                                              self.__deployments[ATTACKING_COUNTRY].troop_count - 1)
    else:
       self.__attack_victory_move_conquering_armies()
       $PlayerTurnStateMachine.send_event("VictoryToIdle")
    
 func _on_attack_victory_state_exited() -> void:
-   if $GameBoardHUD.is_victory_popup_showing():
-      $GameBoardHUD.hide_victory_popup()
+   if $GameBoardHUD.is_troop_movement_popup_showing():
+      $GameBoardHUD.hide_troop_movement_popup()
       if self.__active_player_index == self.__local_player_index:
-            $GameBoardHUD.disconnect("post_victory_troop_count_change_requested", self._on_attack_victory_troop_count_change_requested)
-            $GameBoardHUD.disconnect("post_victory_troop_movement_confirm_requested", self._on_attack_victory_troop_movement_confirm_requested)
+            $GameBoardHUD.disconnect("troop_movement_troop_count_change_requested", self._on_attack_victory_troop_count_change_requested)
+            $GameBoardHUD.disconnect("troop_movement_confirm_requested", self._on_attack_victory_troop_movement_confirm_requested)
    
 func _on_attack_victory_troop_count_change_requested(old_troop_count: int, new_troop_count: int) -> void:
    if old_troop_count == new_troop_count or new_troop_count < 1:
@@ -599,19 +638,18 @@ func _on_attack_victory_troop_count_change_requested(old_troop_count: int, new_t
    
    var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
    
-   var ATTACKING_PLAYER = self.__players[self.__active_player_index]
-   
    if new_troop_count < NUM_ATTACKER_DICE or new_troop_count > (self.__deployments[ATTACKING_COUNTRY].troop_count - 1):
       return
       
-   self.__state_machine_metadata[self.__NUM_ATTACKERS_TO_MOVE_KEY] = new_troop_count
+   self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = new_troop_count
    
-   $GameBoardHUD.show_victory_popup(self.__active_player_index == self.__local_player_index, 
-                                    Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY]), 
-                                    DEFENDING_COUNTRY, 
-                                    new_troop_count,
-                                    NUM_ATTACKER_DICE,
-                                    self.__deployments[ATTACKING_COUNTRY].troop_count - 1)
+   $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index,
+                                           Types.TroopMovementType.POST_VICTORY,
+                                           Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY]), 
+                                           DEFENDING_COUNTRY, 
+                                           new_troop_count,
+                                           NUM_ATTACKER_DICE,
+                                           self.__deployments[ATTACKING_COUNTRY].troop_count - 1)
    
 func _on_attack_victory_troop_movement_confirm_requested() -> void:
    self.__attack_victory_move_conquering_armies()
@@ -620,15 +658,12 @@ func _on_attack_victory_troop_movement_confirm_requested() -> void:
 func __attack_victory_move_conquering_armies():
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
-   assert(self.__state_machine_metadata.has(self.__NUM_ATTACKER_DICE_KEY), "Num attacker dice not set previously!")
-   assert(self.__state_machine_metadata.has(self.__NUM_ATTACKERS_TO_MOVE_KEY), "Num attackers to move not set previously")
+   assert(self.__state_machine_metadata.has(self.__NUM_TROOPS_TO_MOVE_KEY), "Num attackers to move not set previously")
    
    var ATTACKING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
    var DEFENDING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
    
-   var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
-   
-   var NUM_ATTACKERS_TO_MOVE: int = self.__state_machine_metadata[self.__NUM_ATTACKERS_TO_MOVE_KEY]
+   var NUM_ATTACKERS_TO_MOVE: int = self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY]
    
    var ATTACKING_PLAYER = self.__players[self.__active_player_index]
    
@@ -645,7 +680,9 @@ func __attack_victory_move_conquering_armies():
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:
    self.__active_turn_phase = Types.TurnPhase.REINFORCE
-   self.__state_machine_metadata.clear()
+   self.__clear_interphase_state_machine_metadata()
+   
+   self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] = 0
    
    Logger.log_message("Player: " + 
                       self.__players[self.__active_player_index].user_name + 
@@ -653,20 +690,193 @@ func _on_reinforce_state_entered() -> void:
                       Types.TurnPhase.keys()[self.__active_turn_phase])
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
+   
+## Reinforce (Idle) Subphase ########################################################################################### Reinforce (Idle) Subphase
+func _on_reinforce_idle_state_entered() -> void:
+   Logger.log_message("Player: " + 
+                      self.__players[self.__active_player_index].user_name + 
+                      " entered subphase: " + Types.ReinforceTurnSubPhase.keys()[Types.ReinforceTurnSubPhase.IDLE] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.connect("country_clicked", self._on_reinforce_source_country_clicked)
+      
+func _on_reinforce_idle_state_exited() -> void:
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.disconnect("country_clicked", self._on_reinforce_source_country_clicked)
+      
+func _on_reinforce_source_country_clicked(country: Types.Country, action_tag: String) -> void:
+   Logger.log_message("_on_reinforce_source_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   
+   assert(self.__state_machine_metadata.has(self.__NUM_REINFORCE_MOVEMENTS_UTILIZED), "Num reinforce movements not set previously")
+   
+   if self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] >= Constants.MAX_REINFORCES_ALLOWED:
+      Logger.log_error("ReinforceIdle: Local player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they have no more reinforce movements remaining as they have already used: " +
+                       str(self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED]))
+      return
+      
+   if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
+      Logger.log_error("ReinforceIdle: Local player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they do not own it")
+      return
+      
+   if self.__deployments[country].troop_count <= 1:
+      Logger.log_error("ReinforceIdle: Local player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they do not have any moveable troops")
+      return
+      
+   self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY] = country
+   
+   $PlayerTurnStateMachine.send_event("IdleToSourceSelected")
+
+## Reinforce (Source Selected) Subphase ################################################################################ Reinforce (Source Selected) Subphase
+func _on_reinforce_source_selected_state_entered() -> void:
+   Logger.log_message("Player: " + 
+                      self.__players[self.__active_player_index].user_name + 
+                      " entered subphase: " + Types.ReinforceTurnSubPhase.keys()[Types.ReinforceTurnSubPhase.SOURCE_SELECTED] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.connect("country_clicked", self._on_reinforce_destination_country_clicked)
+      
+func _on_reinforce_source_selected_state_exited() -> void:
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoard.disconnect("country_clicked", self._on_reinforce_destination_country_clicked)
+      
+func _on_reinforce_source_selected_state_input(event: InputEvent) -> void:
+   if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
+      if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
+         $PlayerTurnStateMachine.send_event("SourceSelectedToIdle")
+      
+func _on_reinforce_destination_country_clicked(country: Types.Country, action_tag: String) -> void:
+   Logger.log_message("_on_reinforce_source_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+      
+   if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
+      Logger.log_error("ReinforceSourceSelected: Local player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they do not own it")
+      return
+      
+   # TODO: Verify that countries are connected via player occupied countries
+      
+   self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY] = country
+   
+   $PlayerTurnStateMachine.send_event("SourceSelectedToDestinationSelected")
+
+## Reinforce (Destination Selected) Subphase ########################################################################### Reinforce (Destination Selected) Subphase
+func _on_reinforce_destination_selected_state_entered() -> void:
+   Logger.log_message("Player: " + 
+                      self.__players[self.__active_player_index].user_name + 
+                      " entered subphase: " + Types.ReinforceTurnSubPhase.keys()[Types.ReinforceTurnSubPhase.DESTINATION_SELECTED] + 
+                      " of phase: " + 
+                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                     
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   
+   var SOURCE_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   var DESTINATION_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   
+   var SOURCE_OCCUPATION: Types.Occupation = Types.Occupation.new(SOURCE_COUNTRY, self.__deployments[SOURCE_COUNTRY])
+   
+   self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = SOURCE_OCCUPATION.deployment.troop_count - 1
+  
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoardHUD.connect("troop_movement_troop_count_change_requested", self._on_reinforce_troop_count_change_requested)
+      $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
+      
+   $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index, 
+                                             Types.TroopMovementType.REINFORCE,
+                                             SOURCE_OCCUPATION, 
+                                             DESTINATION_COUNTRY, 
+                                             self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY],
+                                             1,
+                                             SOURCE_OCCUPATION.deployment.troop_count - 1)
+
+func _on_reinforce_destination_selected_state_exited() -> void:
+   if self.__active_player_index == self.__local_player_index:
+      $GameBoardHUD.disconnect("troop_movement_troop_count_change_requested", self._on_reinforce_troop_count_change_requested)
+      $GameBoardHUD.disconnect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
+      
+   $GameBoardHUD.hide_troop_movement_popup()
+   
+func _on_reinforce_destination_selected_state_input(event: InputEvent) -> void:
+   if self.__active_player_index == self.__local_player_index and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
+      if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
+         $PlayerTurnStateMachine.send_event("DestinationSelectedToSourceSelected")
+         
+func _on_reinforce_troop_count_change_requested(old_troop_count: int, new_troop_count: int) -> void:
+   if old_troop_count == new_troop_count or new_troop_count < 1:
+      return
+   
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_TROOPS_TO_MOVE_KEY), "Num troops to move not set previously!")
+   
+   var SOURCE_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   var DESTINATION_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   
+   var NUM_TROOPS_TO_MOVE: int = self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY]
+   
+   var SOURCE_COUNTRY_OCCUPATION: Types.Occupation = Types.Occupation.new(SOURCE_COUNTRY, self.__deployments[SOURCE_COUNTRY])
+   
+   if new_troop_count == NUM_TROOPS_TO_MOVE or new_troop_count > (SOURCE_COUNTRY_OCCUPATION.deployment.troop_count - 1):
+      return
+      
+   self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = new_troop_count
+   
+   $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index,
+                                           Types.TroopMovementType.REINFORCE,
+                                           SOURCE_COUNTRY_OCCUPATION, 
+                                           DESTINATION_COUNTRY, 
+                                           new_troop_count,
+                                           1,
+                                           SOURCE_COUNTRY_OCCUPATION.deployment.troop_count - 1)
+   
+func _on_reinforce_troop_movement_confirm_requested() -> void:
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   assert(self.__state_machine_metadata.has(self.__NUM_TROOPS_TO_MOVE_KEY), "Num troops to move not set previously")
+   
+   var SOURCE_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   var DESTINATION_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   
+   var NUM_TROOPS_TO_MOVE: int = self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY]
+   
+   var ACTIVE_PLAYER = self.__players[self.__active_player_index]
+   
+   self.__deployments[SOURCE_COUNTRY].troop_count -= NUM_TROOPS_TO_MOVE
+   self.__deployments[DESTINATION_COUNTRY].troop_count += NUM_TROOPS_TO_MOVE
+   
+   $GameBoard.set_country_deployment(SOURCE_COUNTRY, self.__deployments[SOURCE_COUNTRY])
+   $GameBoard.set_country_deployment(DESTINATION_COUNTRY, self.__deployments[DESTINATION_COUNTRY])
+   
+   self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] += 1
+   
+   $PlayerTurnStateMachine.send_event("DestinationSelectedToIdle")
 
 ## End Phase ########################################################################################################### End Phase
 func _on_end_state_entered() -> void:
    self.__active_turn_phase = Types.TurnPhase.END
-   self.__state_machine_metadata.clear()
+   self.__clear_interphase_state_machine_metadata()
    
    Logger.log_message("Player: " + 
                       self.__players[self.__active_player_index].user_name + 
                       " entered phase: " + 
                       Types.TurnPhase.keys()[self.__active_turn_phase])
                      
+   # TODO: Logic to give user a card if countries captured > 0
+                     
    self.__log_deployments()
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
    $PlayerTurnStateMachine.send_event("EndToStart")
 
+########################################################################################################################
 ########################################################################################################################
