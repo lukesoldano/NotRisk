@@ -4,6 +4,19 @@ extends Node2D
 
 class_name GameBoard
 
+########################################################################################################################
+# TODO's
+#
+# TODO: Short Term
+#
+# Move next phase button into GameBoardHUD and out of GameBoard
+#
+# TODO: Long Term
+#
+# Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
+# 
+########################################################################################################################
+
 signal next_phase_requested()
 signal country_clicked(country: Types.Country, action_tag: String)
 
@@ -100,6 +113,76 @@ func countries_are_neighbors(country1: Types.Country, country2: Types.Country) -
       return false
       
    return self.__country_node_map[country1].is_neighboring(country2)
+   
+# Perform a breadth first search to find if the destination country is connected to the source country via player occupations
+func countries_connected_via_player_occupations(player: Player, 
+                                                occupations: Dictionary, 
+                                                source_country: Types.Country, 
+                                                destination_country: Types.Country) -> bool:
+   if source_country == destination_country:
+      return true
+      
+   assert(occupations.has(source_country), "Occupations map does not contain source country!")
+   assert(occupations.has(destination_country), "Occupations map does not contain destination country!")
+   
+   assert(self.__country_node_map.has(source_country), "Country node map does not contain source country!")
+   assert(self.__country_node_map.has(destination_country), "Country node map does not contain destination country!")
+   
+   var SOURCE_OCCUPATION = occupations[source_country]
+   var DESTINATION_OCCUPATION = occupations[destination_country]
+   
+   if SOURCE_OCCUPATION.player != player:
+      return false
+      
+   if DESTINATION_OCCUPATION.player != player:
+      return false
+      
+   var countries_to_check: Array[Types.Country] = [source_country]
+   var countries_already_checked: Array[Types.Country] = []
+   
+   return self.__dfs_country_connection_via_player_occupations(player, occupations, destination_country, countries_to_check, countries_already_checked)
+   
+# Recursively uses self to search for a connection to destination_country owned by neighboring player occupations
+# Assumes that player does in fact own the destination country, returns true if path found; false o/w
+func __dfs_country_connection_via_player_occupations(player: Player, 
+                                                     occupations: Dictionary, 
+                                                     destination_country: Types.Country,
+                                                     countries_to_check: Array[Types.Country],
+                                                     countries_already_checked: Array[Types.Country]) -> bool:
+                               
+   # Find first, yet to check country that is occupied by player
+   var player_occupied_country_found: bool = false
+   var unchecked_country: Types.Country        
+               
+   while !countries_to_check.is_empty():                                           
+      unchecked_country = countries_to_check.pop_front()
+      
+      if !countries_already_checked.has(unchecked_country):
+         assert(occupations.has(unchecked_country), "Country to check does not exist in occupations map")
+         assert(self.__country_node_map.has(unchecked_country), "Country to check does not exist in node map")
+         
+         countries_already_checked.append(unchecked_country)
+         
+         if occupations[unchecked_country].player == player:
+            player_occupied_country_found = true
+            break
+         
+   if !player_occupied_country_found:
+      return false
+                                                   
+   for neighbor in self.__country_node_map[unchecked_country].neighbors:
+      if neighbor == destination_country:
+         return true
+         
+      assert(occupations.has(neighbor), "Occupations map does not contain neighbor country!")
+      assert(self.__country_node_map.has(neighbor), "Country node map does not contain neighbor country!")
+         
+      if occupations[neighbor].player == player:
+         countries_to_check.append(neighbor)
+      elif !countries_already_checked.has(neighbor):
+         countries_already_checked.append(neighbor)
+   
+   return self.__dfs_country_connection_via_player_occupations(player, occupations, destination_country, countries_to_check, countries_already_checked)
 
 func __validate_borders(): 
    for country in self.__country_node_map:
@@ -108,8 +191,8 @@ func __validate_borders():
          assert(self.__country_node_map.has(neighbor), "Neighbor is not in node map!")
          assert(self.__country_node_map[neighbor].neighbors.count(country) != 0, "Neighbor does not have country as one if its neighbors!")
 
-func _on_turn_phase_updated(player: Types.Player, phase: Types.TurnPhase) -> void:
-   $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + Types.TurnPhase.keys()[phase]
+func _on_turn_phase_updated(player: Player, phase: GameEngine.TurnPhase) -> void:
+   $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + GameEngine.TurnPhase.keys()[phase]
 
 func _on_next_phase_button_pressed() -> void:
    Logger.log_message("LocalPlayer: Next phase requested")

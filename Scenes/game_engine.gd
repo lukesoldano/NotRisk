@@ -4,18 +4,79 @@ extends Node
 
 class_name GameEngine
 
-signal turn_phase_updated(player: Types.Player, phase: Types.TurnPhase)
+########################################################################################################################
+# TODO's
+#
+# TODO: Short Term
+#
+# Prevent next phase from showing while any popups are active
+# State machine/other solution for winning game or being knocked out
+# Playing cards subphase of reinforce
+# Logic to give user a card if countries captured > 0
+# Give conquering player losers cards if loser knocked out of game
+# If upon conquering, player has 5+ cards, send them back to reinforce stage
+#
+# TODO: Long Term
+#
+# Have GameEngine be initialized elsewhere instead of being filled with a dummy player list
+# Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
+# 
+########################################################################################################################
+
+signal turn_phase_updated(player: Player, phase: TurnPhase)
+
+# Needed for signal output to UI
+enum TurnPhase
+{
+   START = 0,
+   DEPLOY = 1,
+   ATTACK = 2,
+   REINFORCE = 3,
+   END = 4
+}
+
+# Needed for signal output to UI
+enum DeployTurnSubPhase
+{
+   IDLE = 0,
+   PLAYING_CARDS = 1,
+   DEPLOYING = 2
+}
+
+# Needed for signal output to UI
+enum AttackTurnSubPhase
+{
+   IDLE = 0,
+   SOURCE_SELECTED = 1,
+   DESTINATION_SELECTED = 2,
+   ROLLING = 3,
+   VICTORY = 4
+}
+
+# Needed for signal output to UI
+enum ReinforceTurnSubPhase
+{
+   IDLE = 0,
+   SOURCE_SELECTED = 1,
+   DESTINATION_SELECTED = 2
+}
+
+enum TroopMovementType
+{
+   POST_VICTORY = 0,
+   REINFORCE = 1
+}
 
 var __local_player_index: int = 0
 var __active_player_index: int = -1
-var __active_turn_phase: Types.TurnPhase = Types.TurnPhase.START
+var __active_turn_phase: TurnPhase = TurnPhase.START
 
-var __players: Array = [
-   Types.Player.new("Luke", Color.RED),
-   Types.Player.new("Ben", Color.AQUA),
-   Types.Player.new("Sam", Color.GREEN),
-   Types.Player.new("Dennis", Color.YELLOW),
-   Types.Player.new("Austin", Color.PURPLE)
+var __players: Array[Player] = [
+   Player.new(Player.PlayerType.HUMAN, "Luke", Color.RED),
+   Player.new(Player.PlayerType.AI, "Ben", Color.AQUA),
+   Player.new(Player.PlayerType.AI, "Sam", Color.GREEN),
+   Player.new(Player.PlayerType.AI, "Dennis", Color.YELLOW),
+   Player.new(Player.PlayerType.AI, "Austin", Color.PURPLE)
 ]
 
 var __player_occupations: Dictionary = {}
@@ -33,11 +94,12 @@ const __NUM_REINFORCE_MOVEMENTS_UTILIZED = "num_reinforces_utilized"
 const __COUNTRIES_CONQUERED_KEY = "countries_counquered"
 var __state_machine_metadata: Dictionary = {}
 
-#func _init(players: Array[Types.Player]):
+#func _init(players: Array[Player]):
    #self.__players = players
 
 func _ready():
    assert(self.__players.size() >= 2 && self.__players.size() <= 6, "Invalid player count!")
+   assert(self.__players[self.__local_player_index].player_type == Player.PlayerType.HUMAN, "Local player can only be Human!")
    
    self.__generate_random_deployments()
    self.__log_deployments()
@@ -50,7 +112,7 @@ func __log_deployments() -> void:
    Logger.log_message("-----------------------------------------------------------------------------------------------")
    Logger.log_message("CURRENT DEPLOYMENTS: ")
    for player in self.__players:
-      Logger.log_indented_message(1, "Player: " + player.user_name)
+      Logger.log_indented_message(1, str(player))
       for occupied_country in self.__player_occupations[player]:
          Logger.log_indented_message(2, "Country: " + Types.Country.keys()[occupied_country] + " Troops: " + str(self.__deployments[occupied_country].troop_count))
    Logger.log_message("-----------------------------------------------------------------------------------------------")
@@ -107,10 +169,10 @@ func _on_next_phase_requested() -> void:
       return
    
    match self.__active_turn_phase:
-      Types.TurnPhase.START:
+      TurnPhase.START:
          $PlayerTurnStateMachine.send_event("StartToDeploy")
          
-      Types.TurnPhase.DEPLOY:
+      TurnPhase.DEPLOY:
          assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
          
          var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
@@ -122,11 +184,11 @@ func _on_next_phase_requested() -> void:
             
          $PlayerTurnStateMachine.send_event("DeployToAttack")
          
-      Types.TurnPhase.ATTACK:
+      TurnPhase.ATTACK:
          $PlayerTurnStateMachine.send_event("AttackToReinforce")
-      Types.TurnPhase.REINFORCE:
+      TurnPhase.REINFORCE:
          $PlayerTurnStateMachine.send_event("ReinforceToEnd")
-      Types.TurnPhase.END:
+      TurnPhase.END:
          $PlayerTurnStateMachine.send_event("EndToStart")
       _:
          assert(false, "Invalid active turn phase!")
@@ -134,30 +196,30 @@ func _on_next_phase_requested() -> void:
 ## Start Phase ######################################################################################################### Start Phase
 func _on_start_state_entered() -> void:
    self.__active_player_index = (self.__active_player_index + 1) % self.__players.size()
-   self.__active_turn_phase = Types.TurnPhase.START
+   self.__active_turn_phase = TurnPhase.START
    
    # CLEAR ALL METADATA as we are entering a new player's turn
    self.__state_machine_metadata.clear()
    
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
                       " entered phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
    $PlayerTurnStateMachine.send_event("StartToDeploy")
 
 ## Deploy Phase ######################################################################################################## Deploy Phase
 func _on_deploy_state_entered() -> void:
-   self.__active_turn_phase = Types.TurnPhase.DEPLOY
+   self.__active_turn_phase = TurnPhase.DEPLOY
    self.__clear_interphase_state_machine_metadata()
    
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
                       " entered phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
-   self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = Utilities.get_num_reinforcements_earned($GameBoard.CONTINENTS, $GameBoard.CONTINENT_BONUSES, self.__player_occupations[self.__players[self.__active_player_index]])
+   self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = Utilities.get_num_reinforcements_earned($GameBoard.CONTINENTS, 
+                                                                                                                $GameBoard.CONTINENT_BONUSES, 
+                                                                                                                self.__player_occupations[self.__players[self.__active_player_index]])
    
    $GameBoardHUD.show_deploy_reinforcements_remaining(self.__players[self.__active_player_index], self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
    
@@ -166,15 +228,12 @@ func _on_deploy_state_entered() -> void:
 func _on_deploy_state_exited() -> void:
    $GameBoardHUD.hide_deploy_reinforcements_remaining()
    
-# TODO: Playing cards logic 
-   
 ## Deploy (Idle) Subphase ############################################################################################## Deploy (Idle) Subphase
 func _on_deploy_idle_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.DeployTurnSubPhase.keys()[Types.DeployTurnSubPhase.IDLE] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + DeployTurnSubPhase.keys()[DeployTurnSubPhase.IDLE] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_deploy_idle_country_clicked)
@@ -208,11 +267,10 @@ func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String)
    
 ## Deploy (Deploying) Subphase ######################################################################################### Deploy (Deploying) Subphase
 func _on_deploy_deploying_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.DeployTurnSubPhase.keys()[Types.DeployTurnSubPhase.DEPLOYING] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + DeployTurnSubPhase.keys()[DeployTurnSubPhase.DEPLOYING] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
    
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Deploy country not set previously!")
    assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
@@ -309,13 +367,12 @@ func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_cou
    
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
-   self.__active_turn_phase = Types.TurnPhase.ATTACK
+   self.__active_turn_phase = TurnPhase.ATTACK
    self.__clear_interphase_state_machine_metadata()
    
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
                       " entered phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
    
@@ -323,11 +380,10 @@ func _on_attack_state_entered() -> void:
 func _on_attack_idle_state_entered() -> void:
    self.__clear_interphase_state_machine_metadata()
    
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.IDLE] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.IDLE] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
@@ -357,11 +413,10 @@ func _on_attack_source_country_clicked(country: Types.Country, action_tag: Strin
    
 ## Attack (Source Selected) Subphase ################################################################################### Attack (Source Selected) Subphase
 func _on_attack_source_selected_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.SOURCE_SELECTED] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.SOURCE_SELECTED] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
    
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_attack_source_selected_country_clicked)
@@ -407,11 +462,10 @@ func _on_attack_source_selected_country_clicked(country: Types.Country, action_t
    
 ## Attack (Destination Selected) Subphase ############################################################################## Attack (Destination Selected) Subphase
 func _on_attack_destination_selected_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.DESTINATION_SELECTED] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.DESTINATION_SELECTED] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
@@ -487,11 +541,10 @@ func _on_attack_destination_selected_die_count_change_requested(old_num_dice: in
    
 ## Attack (Rolling) Subphase ########################################################################################### Attack (Rolling) Subphase
 func _on_attack_rolling_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.ROLLING] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.ROLLING] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
@@ -504,8 +557,7 @@ func _on_attack_rolling_state_entered() -> void:
    var NUM_ATTACKER_DICE: int = self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY]
    var NUM_DEFENDER_DICE: int = self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY]
    
-   Logger.log_message("Player: " +
-                      self.__players[self.__active_player_index].user_name +
+   Logger.log_message(str(self.__players[self.__active_player_index]) +
                       " rolling from: " +
                       Types.Country.keys()[ATTACKING_COUNTRY] +
                       " with: " +
@@ -579,11 +631,10 @@ func _on_attack_rolling_state_entered() -> void:
       
 ## Attack (Victory) Subphase ########################################################################################### Attack (Victory) Subphase
 func _on_attack_victory_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.AttackTurnSubPhase.keys()[Types.AttackTurnSubPhase.VICTORY] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.VICTORY] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
@@ -608,7 +659,7 @@ func _on_attack_victory_state_entered() -> void:
          $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_attack_victory_troop_movement_confirm_requested)
          
       $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index, 
-                                              Types.TroopMovementType.POST_VICTORY,
+                                              TroopMovementType.POST_VICTORY,
                                               Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY]), 
                                               DEFENDING_COUNTRY, 
                                               NUM_ATTACKER_DICE,
@@ -644,7 +695,7 @@ func _on_attack_victory_troop_count_change_requested(old_troop_count: int, new_t
    self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = new_troop_count
    
    $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index,
-                                           Types.TroopMovementType.POST_VICTORY,
+                                           TroopMovementType.POST_VICTORY,
                                            Types.Occupation.new(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY]), 
                                            DEFENDING_COUNTRY, 
                                            new_troop_count,
@@ -679,25 +730,23 @@ func __attack_victory_move_conquering_armies():
 
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:
-   self.__active_turn_phase = Types.TurnPhase.REINFORCE
+   self.__active_turn_phase = TurnPhase.REINFORCE
    self.__clear_interphase_state_machine_metadata()
    
    self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] = 0
    
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
                       " entered phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
    
 ## Reinforce (Idle) Subphase ########################################################################################### Reinforce (Idle) Subphase
 func _on_reinforce_idle_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.ReinforceTurnSubPhase.keys()[Types.ReinforceTurnSubPhase.IDLE] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + ReinforceTurnSubPhase.keys()[ReinforceTurnSubPhase.IDLE] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_reinforce_source_country_clicked)
@@ -736,11 +785,10 @@ func _on_reinforce_source_country_clicked(country: Types.Country, action_tag: St
 
 ## Reinforce (Source Selected) Subphase ################################################################################ Reinforce (Source Selected) Subphase
 func _on_reinforce_source_selected_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.ReinforceTurnSubPhase.keys()[Types.ReinforceTurnSubPhase.SOURCE_SELECTED] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + ReinforceTurnSubPhase.keys()[ReinforceTurnSubPhase.SOURCE_SELECTED] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_reinforce_destination_country_clicked)
@@ -756,14 +804,29 @@ func _on_reinforce_source_selected_state_input(event: InputEvent) -> void:
       
 func _on_reinforce_destination_country_clicked(country: Types.Country, action_tag: String) -> void:
    Logger.log_message("_on_reinforce_source_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   var SOURCE_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   
+   if country == SOURCE_COUNTRY:
+      Logger.log_error("ReinforceSourceSelected: Local player selected destination country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but that was the source country they already selected")
+      return
       
    if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
-      Logger.log_error("ReinforceSourceSelected: Local player selected country: " + 
+      Logger.log_error("ReinforceSourceSelected: Local player selected destination country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do not own it")
       return
       
-   # TODO: Verify that countries are connected via player occupied countries
+   if not $GameBoard.countries_connected_via_player_occupations(self.__players[self.__active_player_index], self.__deployments, SOURCE_COUNTRY, country):
+      Logger.log_error("ReinforceSourceSelected: Local player selected destination country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but it is not connected to: " +
+                       Types.Country.keys()[SOURCE_COUNTRY] +
+                       " via player occupations")
+      return
       
    self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY] = country
    
@@ -771,11 +834,10 @@ func _on_reinforce_destination_country_clicked(country: Types.Country, action_ta
 
 ## Reinforce (Destination Selected) Subphase ########################################################################### Reinforce (Destination Selected) Subphase
 func _on_reinforce_destination_selected_state_entered() -> void:
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
-                      " entered subphase: " + Types.ReinforceTurnSubPhase.keys()[Types.ReinforceTurnSubPhase.DESTINATION_SELECTED] + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + ReinforceTurnSubPhase.keys()[ReinforceTurnSubPhase.DESTINATION_SELECTED] + 
                       " of phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
@@ -792,7 +854,7 @@ func _on_reinforce_destination_selected_state_entered() -> void:
       $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
       
    $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index, 
-                                             Types.TroopMovementType.REINFORCE,
+                                             TroopMovementType.REINFORCE,
                                              SOURCE_OCCUPATION, 
                                              DESTINATION_COUNTRY, 
                                              self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY],
@@ -832,7 +894,7 @@ func _on_reinforce_troop_count_change_requested(old_troop_count: int, new_troop_
    self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = new_troop_count
    
    $GameBoardHUD.show_troop_movement_popup(self.__active_player_index == self.__local_player_index,
-                                           Types.TroopMovementType.REINFORCE,
+                                           TroopMovementType.REINFORCE,
                                            SOURCE_COUNTRY_OCCUPATION, 
                                            DESTINATION_COUNTRY, 
                                            new_troop_count,
@@ -863,15 +925,12 @@ func _on_reinforce_troop_movement_confirm_requested() -> void:
 
 ## End Phase ########################################################################################################### End Phase
 func _on_end_state_entered() -> void:
-   self.__active_turn_phase = Types.TurnPhase.END
+   self.__active_turn_phase = TurnPhase.END
    self.__clear_interphase_state_machine_metadata()
    
-   Logger.log_message("Player: " + 
-                      self.__players[self.__active_player_index].user_name + 
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
                       " entered phase: " + 
-                      Types.TurnPhase.keys()[self.__active_turn_phase])
-                     
-   # TODO: Logic to give user a card if countries captured > 0
+                      TurnPhase.keys()[self.__active_turn_phase])
                      
    self.__log_deployments()
    

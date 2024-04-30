@@ -6,7 +6,8 @@ res://Scenes/game_board_hud.tscn
 res://Scenes/game_board.tscn
 res://Scenes/country.tscn
 res://Scenes/occupation_widget.tscn
-res://Scripts/utilities.gd
-res://Scenes/country.gd
+res://Scenes/game_board.gd
+res://Scripts/types.gd
 res://Scenes/game_board_hud.gd
-res://Scripts/constants.gd
+res://Scenes/player.tscn
+res://Scenes/player.gd

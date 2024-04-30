@@ -4,6 +4,20 @@ extends CanvasLayer
 
 class_name GameBoardHUD
 
+########################################################################################################################
+# TODO's
+#
+# TODO: Short Term
+#
+# Remove cancel button from attack window, right-click rules all
+#
+# TODO: Long Term
+#
+# Make popups individual scenes
+# Add drawn arrow from selected country to make right click requirement to cancel more obvious
+# 
+########################################################################################################################
+
 signal deploy_cancel_requested()
 signal deploy_confirm_requested()
 signal deploy_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
@@ -34,7 +48,7 @@ func _ready():
 func is_deploy_reinforcements_remaining_showing() -> bool:
    return $DeployReinforcementsRemainingCanvasLayer.visible
    
-func show_deploy_reinforcements_remaining(player: Types.Player, reinforcements_remaining: int) -> void:
+func show_deploy_reinforcements_remaining(player: Player, reinforcements_remaining: int) -> void:
    $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.text = str(reinforcements_remaining)
    $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.label_settings.font_color = player.army_color
    
@@ -50,7 +64,7 @@ func hide_deploy_reinforcements_remaining() -> void:
 func is_deploy_popup_showing() -> bool:
    return $DeployPopupCanvasLayer.visible
    
-func show_deploy_popup(is_local_player: bool, player: Types.Player, deploy_country: Types.Country, troops_to_deploy: int, max_deployable_troops: int) -> void:
+func show_deploy_popup(is_local_player: bool, player: Player, deploy_country: Types.Country, troops_to_deploy: int, max_deployable_troops: int) -> void:
    $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.text = Types.Country.keys()[deploy_country]
    $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.label_settings.font_color = player.army_color
    
@@ -231,7 +245,7 @@ func is_troop_movement_popup_showing() -> bool:
    return $TroopMovementPopupCanvasLayer.visible
    
 func show_troop_movement_popup(is_local_player: bool, 
-                               movement_type: Types.TroopMovementType,
+                               movement_type: GameEngine.TroopMovementType,
                                src_occupation: Types.Occupation, 
                                dest_country: Types.Country, 
                                troops_to_move: int,
@@ -239,9 +253,9 @@ func show_troop_movement_popup(is_local_player: bool,
                                max_troops_moveable: int) -> void:
 
    match movement_type:
-      Types.TroopMovementType.POST_VICTORY:
+      GameEngine.TroopMovementType.POST_VICTORY:
          $TroopMovementPopupCanvasLayer/TitleLabel.text = self.__VICTORY_TITLE_STR
-      Types.TroopMovementType.REINFORCE:
+      GameEngine.TroopMovementType.REINFORCE:
          $TroopMovementPopupCanvasLayer/TitleLabel.text = self.__REINFORCE_TITLE_STR
       _:
          assert(false, "Invalid movement type provided!")

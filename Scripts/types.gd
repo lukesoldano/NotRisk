@@ -56,61 +56,11 @@ enum Country
    YAKUTSK = 41
 }
 
-# Needed for signal output to UI
-enum TurnPhase
-{
-   START = 0,
-   DEPLOY = 1,
-   ATTACK = 2,
-   REINFORCE = 3,
-   END = 4
-}
-
-# Needed for signal output to UI
-enum DeployTurnSubPhase
-{
-   IDLE = 0,
-   PLAYING_CARDS = 1,
-   DEPLOYING = 2
-}
-
-# Needed for signal output to UI
-enum AttackTurnSubPhase
-{
-   IDLE = 0,
-   SOURCE_SELECTED = 1,
-   DESTINATION_SELECTED = 2,
-   ROLLING = 3,
-   VICTORY = 4
-}
-
-# Needed for signal output to UI
-enum ReinforceTurnSubPhase
-{
-   IDLE = 0,
-   SOURCE_SELECTED = 1,
-   DESTINATION_SELECTED = 2
-}
-
-enum TroopMovementType
-{
-   POST_VICTORY = 0,
-   REINFORCE = 1
-}
-
-class Player:
-   var user_name: String = "DEFAULT NAME"
-   var army_color: Color = Color.WHITE
-   
-   func _init(i_user_name: String, i_army_color: Color):
-      self.user_name = i_user_name
-      self.army_color = i_army_color
-
 class Deployment:
-   var player: Types.Player = null
+   var player: Player = null
    var troop_count: int = 0
    
-   func _init(i_player: Types.Player, i_troop_count: int):
+   func _init(i_player: Player, i_troop_count: int):
       self.player = i_player
       self.troop_count = i_troop_count
       
