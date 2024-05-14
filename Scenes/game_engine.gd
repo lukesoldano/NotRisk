@@ -15,6 +15,9 @@ class_name GameEngine
 # Logic to give user a card if countries captured > 0
 # Give conquering player losers cards if loser knocked out of game
 # If upon conquering, player has 5+ cards, send them back to reinforce stage
+# Add timers to AI calls to not make game proceed too rapidly
+# Change name of __player_occupations member to something that doesn't clash with other definition of the term "occupation"
+# Potentially rework terminology and types of occupations/deployments overall as it is not as simple as it could be at first glance
 #
 # TODO: Long Term
 #
@@ -67,16 +70,16 @@ enum TroopMovementType
    REINFORCE = 1
 }
 
-var __local_player_index: int = 0
+var __local_player_index: int = 4
 var __active_player_index: int = -1
 var __active_turn_phase: TurnPhase = TurnPhase.START
 
 var __players: Array[Player] = [
-   Player.new(Player.PlayerType.HUMAN, "Luke", Color.RED),
    Player.new(Player.PlayerType.AI, "Ben", Color.AQUA),
    Player.new(Player.PlayerType.AI, "Sam", Color.GREEN),
    Player.new(Player.PlayerType.AI, "Dennis", Color.YELLOW),
-   Player.new(Player.PlayerType.AI, "Austin", Color.PURPLE)
+   Player.new(Player.PlayerType.AI, "Austin", Color.PURPLE),
+   Player.new(Player.PlayerType.HUMAN, "Luke", Color.RED)
 ]
 
 var __player_occupations: Dictionary = {}
@@ -225,6 +228,12 @@ func _on_deploy_state_entered() -> void:
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
    
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      player.player_controller.determine_desired_deployments(self.__player_occupations, 
+                                                             self.__deployments, 
+                                                             self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
+   
 func _on_deploy_state_exited() -> void:
    $GameBoardHUD.hide_deploy_reinforcements_remaining()
    
@@ -237,6 +246,12 @@ func _on_deploy_idle_state_entered() -> void:
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_deploy_idle_country_clicked)
+      
+   # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      if !player.player_controller.handle_deploy_state_idle(Callable(self, "__deploy_select_country")):
+         $PlayerTurnStateMachine.send_event("DeployToAttack")
    
 func _on_deploy_idle_state_exited() -> void:
    if self.__active_player_index == self.__local_player_index:
@@ -244,21 +259,27 @@ func _on_deploy_idle_state_exited() -> void:
       
 func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String) -> void:
    Logger.log_message("_on_deploy_idle_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   self.__deploy_select_country(country)
    
+func __deploy_select_country(country: Types.Country):
    assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
    
    var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
-      
-   if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
+   
+   if !self.__player_occupations[self.__players[self.__active_player_index]].has(country):
       Logger.log_error("DeployIdle: Local player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do not own it")
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a country to deploy to that they do not own!")
       return
    
    if REINFORCEMENTS_REMAINING <= 0:
-      Logger.log_error("DeployIdle: Local player selected country: " + 
+      Logger.log_error("DeployIdle: Player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do not have any reinforcements remaining")
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a country to deploy to without any remaining reinforcements!")
       return
       
    self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY] = country
@@ -290,6 +311,11 @@ func _on_deploy_deploying_state_entered() -> void:
                                    DEPLOY_COUNTRY, 
                                    REINFORCEMENTS_REMAINING, 
                                    REINFORCEMENTS_REMAINING)
+                                 
+   # If player is being controlled by AI, tell AI to make a move
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      player.player_controller.handle_deploy_state_deploying(Callable(self, "__deploy_set_troop_count_and_confirm"), DEPLOY_COUNTRY)
 
 func _on_deploy_deploying_state_exited() -> void:
    if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
@@ -333,6 +359,13 @@ func _on_deploy_confirm_requested() -> void:
    
    $GameBoardHUD.show_deploy_reinforcements_remaining(self.__players[self.__active_player_index], reinforcements_remaining)
    
+   Logger.log_message("Deploying: " + 
+                      str(UNITS_TO_DEPLOY) + 
+                      " troops to: " + 
+                      Types.Country.keys()[DEPLOY_COUNTRY] +
+                      ", Reinforcements remaining: " + 
+                      str(reinforcements_remaining))
+   
    $PlayerTurnStateMachine.send_event("DeployingToIdle")
    
 func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_count: int) -> void:
@@ -355,6 +388,8 @@ func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_cou
                        str(new_troop_count) + 
                        " is greater than reinforcements remaining: " +
                        str(REINFORCEMENTS_REMAINING))
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a deployment count higher than their available reinforcements!")
       return
       
    self.__state_machine_metadata[self.__NUM_UNITS_KEY] = new_troop_count
@@ -364,6 +399,12 @@ func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_cou
                                    DEPLOY_COUNTRY, 
                                    new_troop_count, 
                                    REINFORCEMENTS_REMAINING)
+                                 
+func __deploy_set_troop_count_and_confirm(troop_count: int):
+   assert(self.__state_machine_metadata.has(self.__NUM_UNITS_KEY), "Deploy troop count not set previously!")
+   
+   self._on_deploy_troop_count_change_requested(self.__state_machine_metadata[self.__NUM_UNITS_KEY], troop_count)
+   self._on_deploy_confirm_requested()
    
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
@@ -387,6 +428,15 @@ func _on_attack_idle_state_entered() -> void:
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
+      
+   # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      if !player.player_controller.handle_attack_state_idle(Callable(self, "__attack_select_source_country"), 
+                                                            Callable($GameBoard, "get_countries_that_neighbor"), 
+                                                            self.__player_occupations, 
+                                                            self.__deployments):
+         $PlayerTurnStateMachine.send_event("AttackToReinforce")
    
 func _on_attack_idle_state_exited() -> void:
    if self.__active_player_index == self.__local_player_index:
@@ -394,17 +444,28 @@ func _on_attack_idle_state_exited() -> void:
    
 func _on_attack_source_country_clicked(country: Types.Country, action_tag: String) -> void:
    Logger.log_message("_on_attack_source_country_selected( " + Types.Country.keys()[country] + ", " + action_tag + " )")
-      
-   if !self.__player_occupations[self.__players[self.__local_player_index]].has(country):
-      Logger.log_error("AttackIdle: Local player selected country: " + 
-                       Types.Country.keys()[country] + 
-                       ", but they do not own it")
+   
+   if self.__active_player_index != self.__local_player_index:
+      Logger.log_error("AttackIdle: Local player selected country, but it is not their turn")
       return
       
+   self.__attack_select_source_country(country)
+   
+func __attack_select_source_country(country: Types.Country) -> void:
+   if !self.__player_occupations[self.__players[self.__active_player_index]].has(country):
+      Logger.log_error("AttackIdle: Player selected country: " + 
+                       Types.Country.keys()[country] + 
+                       ", but they do not own it")
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a country to attack from that they do not own!")
+      return
+   
    if self.__deployments[country].troop_count < 2:
-      Logger.log_error("AttackIdle: Local player selected country: " + 
+      Logger.log_error("AttackIdle: Player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do not have enough attackers")
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a country to attack from without enough attackers available!")
       return
       
    self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY] = country
@@ -417,9 +478,20 @@ func _on_attack_source_selected_state_entered() -> void:
                       " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.SOURCE_SELECTED] + 
                       " of phase: " + 
                       TurnPhase.keys()[self.__active_turn_phase])
+                     
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_attack_source_selected_country_clicked)
+      
+   # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      player.player_controller.handle_attack_state_source_selected(Callable(self, "__attack_select_destination_country"), 
+                                                                   Callable($GameBoard, "get_countries_that_neighbor"), 
+                                                                   self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY],
+                                                                   self.__player_occupations, 
+                                                                   self.__deployments)
 
 func _on_attack_source_selected_state_exited() -> void:
    if self.__active_player_index == self.__local_player_index:
@@ -433,27 +505,35 @@ func _on_attack_source_selected_state_input(event: InputEvent) -> void:
 func _on_attack_source_selected_country_clicked(country: Types.Country, action_tag: String) -> void:
    Logger.log_message("_on_attack_destination_country_selected( " + Types.Country.keys()[country] + ", " + action_tag + " )")
    
-   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
-   var SOURCE_COUNTRY = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
-   
    if self.__active_player_index != self.__local_player_index:
       Logger.log_error("AttackSourceSelected: Local player selected country, but it is not their turn")
       return
       
+   self.__attack_select_destination_country(country)
+   
+func __attack_select_destination_country(country: Types.Country) -> void:
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
+   
+   var SOURCE_COUNTRY = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
+   
    if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
       self.__state_machine_metadata.erase(self.__DESTINATION_COUNTRY_KEY)
       
-   if self.__player_occupations[self.__players[self.__local_player_index]].has(country):
-      Logger.log_error("AttackSourceSelected: Local player selected country: " + 
+   if self.__player_occupations[self.__players[self.__active_player_index]].has(country):
+      Logger.log_error("AttackSourceSelected: Player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do already own it")
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a country to attack that they already own!")
       return
       
    if !$GameBoard.countries_are_neighbors(SOURCE_COUNTRY, country):
-      Logger.log_error("AttackSourceSelected: Local player selected country: " + 
+      Logger.log_error("AttackSourceSelected: Player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but it does not neighbor: " +
                        Types.Country.keys()[SOURCE_COUNTRY])
+      assert(self.__active_player_index == self.__local_player_index, 
+             "Non-local player selected a country to attack that does not border their source country!")
       return
       
    self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY] = country
@@ -497,6 +577,15 @@ func _on_attack_destination_selected_state_entered() -> void:
                                    self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY],
                                    max_attacker_die_count, 
                                    self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY])
+                                 
+   # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      player.player_controller.handle_attack_state_destination_selected(Callable(self, "__attack_set_die_count_and_roll"), 
+                                                                        ATTACKING_COUNTRY,
+                                                                        DEFENDING_COUNTRY,
+                                                                        self.__player_occupations, 
+                                                                        self.__deployments)
 
 func _on_attack_destination_selected_state_exited() -> void:
    if self.__active_player_index == self.__local_player_index:
@@ -538,6 +627,12 @@ func _on_attack_destination_selected_die_count_change_requested(old_num_dice: in
    if new_num_dice < old_num_dice or MAX_DIE_COUNT >= new_num_dice:
       self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY] = new_num_dice
       $GameBoardHUD.update_attack_die_count(new_num_dice, MAX_DIE_COUNT) 
+      
+func __attack_set_die_count_and_roll(die_count: int):
+   assert(self.__state_machine_metadata.has(self.__NUM_ATTACKER_DICE_KEY), "Num attacker dice not set previously!")
+   
+   self._on_attack_destination_selected_die_count_change_requested(self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY], die_count)
+   self._on_attack_destination_selected_roll_requested()
    
 ## Attack (Rolling) Subphase ########################################################################################### Attack (Rolling) Subphase
 func _on_attack_rolling_state_entered() -> void:
@@ -665,6 +760,16 @@ func _on_attack_victory_state_entered() -> void:
                                               NUM_ATTACKER_DICE,
                                               NUM_ATTACKER_DICE,
                                               self.__deployments[ATTACKING_COUNTRY].troop_count - 1)
+                                             
+      # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
+      var player = self.__players[self.__active_player_index]
+      if player.player_controller != null:
+         player.player_controller.handle_attack_state_victory(Callable(self, "__attack_victory_set_troop_count_and_confirm"), 
+                                                                       ATTACKING_COUNTRY,
+                                                                       DEFENDING_COUNTRY,
+                                                                       self.__player_occupations, 
+                                                                       self.__deployments)
+                                                                        
    else:
       self.__attack_victory_move_conquering_armies()
       $PlayerTurnStateMachine.send_event("VictoryToIdle")
@@ -727,6 +832,12 @@ func __attack_victory_move_conquering_armies():
    
    $GameBoard.set_country_deployment(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY])
    $GameBoard.set_country_deployment(DEFENDING_COUNTRY, self.__deployments[DEFENDING_COUNTRY])
+   
+func __attack_victory_set_troop_count_and_confirm(troop_count: int):
+   assert(self.__state_machine_metadata.has(self.__NUM_TROOPS_TO_MOVE_KEY), "Num attackers to move not set previously")
+   
+   self._on_attack_victory_troop_count_change_requested(self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY], troop_count)
+   self._on_attack_victory_troop_movement_confirm_requested()
 
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:
@@ -750,6 +861,12 @@ func _on_reinforce_idle_state_entered() -> void:
                      
    if self.__active_player_index == self.__local_player_index:
       $GameBoard.connect("country_clicked", self._on_reinforce_source_country_clicked)
+      
+   # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
+   var player = self.__players[self.__active_player_index]
+   if player.player_controller != null:
+      if !player.player_controller.handle_reinforce_state_idle():
+         $PlayerTurnStateMachine.send_event("ReinforceToEnd")
       
 func _on_reinforce_idle_state_exited() -> void:
    if self.__active_player_index == self.__local_player_index:
@@ -910,8 +1027,6 @@ func _on_reinforce_troop_movement_confirm_requested() -> void:
    var DESTINATION_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
    
    var NUM_TROOPS_TO_MOVE: int = self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY]
-   
-   var ACTIVE_PLAYER = self.__players[self.__active_player_index]
    
    self.__deployments[SOURCE_COUNTRY].troop_count -= NUM_TROOPS_TO_MOVE
    self.__deployments[DESTINATION_COUNTRY].troop_count += NUM_TROOPS_TO_MOVE

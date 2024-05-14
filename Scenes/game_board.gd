@@ -106,6 +106,10 @@ func set_country_deployment(country: Types.Country, deployment: Types.Deployment
    self.__country_node_map[country].set_deployment(deployment)
    return true
    
+func get_countries_that_neighbor(country: Types.Country) -> Array:
+   assert(self.__country_node_map.has(country), "Invalid country")
+   return self.__country_node_map[country].neighbors
+   
 func countries_are_neighbors(country1: Types.Country, country2: Types.Country) -> bool:
    if self.__country_node_map.has(country1) != true or self.__country_node_map.has(country2) != true:
       assert(self.__country_node_map.has(country1), "Invalid country1")
