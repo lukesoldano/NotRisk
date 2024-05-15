@@ -15,7 +15,6 @@ class_name GameEngine
 # Logic to give user a card if countries captured > 0
 # Give conquering player losers cards if loser knocked out of game
 # If upon conquering, player has 5+ cards, send them back to reinforce stage
-# Add timers to AI calls to not make game proceed too rapidly
 # Change name of __player_occupations member to something that doesn't clash with other definition of the term "occupation"
 # Potentially rework terminology and types of occupations/deployments overall as it is not as simple as it could be at first glance
 #
@@ -27,6 +26,11 @@ class_name GameEngine
 ########################################################################################################################
 
 signal turn_phase_updated(player: Player, phase: TurnPhase)
+
+@export var __ai_delay_enabled = false
+@export var __deploy_screen_ai_delay := 1
+@export var __attack_screen_ai_delay := 2
+@export var __victory_screen_ai_delay := 2
 
 # Needed for signal output to UI
 enum TurnPhase
@@ -250,7 +254,7 @@ func _on_deploy_idle_state_entered() -> void:
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = self.__players[self.__active_player_index]
    if player.player_controller != null:
-      if !player.player_controller.handle_deploy_state_idle(Callable(self, "__deploy_select_country")):
+      if !player.player_controller.handle_deploy_state_idle(self.__deploy_select_country):
          $PlayerTurnStateMachine.send_event("DeployToAttack")
    
 func _on_deploy_idle_state_exited() -> void:
@@ -315,7 +319,7 @@ func _on_deploy_deploying_state_entered() -> void:
    # If player is being controlled by AI, tell AI to make a move
    var player = self.__players[self.__active_player_index]
    if player.player_controller != null:
-      player.player_controller.handle_deploy_state_deploying(Callable(self, "__deploy_set_troop_count_and_confirm"), DEPLOY_COUNTRY)
+      player.player_controller.handle_deploy_state_deploying(self.__deploy_set_troop_count_and_confirm, DEPLOY_COUNTRY)
 
 func _on_deploy_deploying_state_exited() -> void:
    if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
@@ -404,7 +408,14 @@ func __deploy_set_troop_count_and_confirm(troop_count: int):
    assert(self.__state_machine_metadata.has(self.__NUM_UNITS_KEY), "Deploy troop count not set previously!")
    
    self._on_deploy_troop_count_change_requested(self.__state_machine_metadata[self.__NUM_UNITS_KEY], troop_count)
-   self._on_deploy_confirm_requested()
+   # Add delay if player is being controlled by AI
+   if self.__ai_delay_enabled and self.__players[self.__active_player_index].player_controller != null:
+      var ai_delay_timer := Types.StartAndForgetTimer.new(self._on_deploy_confirm_requested)
+      ai_delay_timer.name = "AiDelayTimer"
+      self.add_child(ai_delay_timer)
+      ai_delay_timer.start(self.__deploy_screen_ai_delay)
+   else:
+      self._on_deploy_confirm_requested()
    
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
@@ -432,8 +443,8 @@ func _on_attack_idle_state_entered() -> void:
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = self.__players[self.__active_player_index]
    if player.player_controller != null:
-      if !player.player_controller.handle_attack_state_idle(Callable(self, "__attack_select_source_country"), 
-                                                            Callable($GameBoard, "get_countries_that_neighbor"), 
+      if !player.player_controller.handle_attack_state_idle(self.__attack_select_source_country, 
+                                                            $GameBoard.get_countries_that_neighbor, 
                                                             self.__player_occupations, 
                                                             self.__deployments):
          $PlayerTurnStateMachine.send_event("AttackToReinforce")
@@ -487,8 +498,8 @@ func _on_attack_source_selected_state_entered() -> void:
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = self.__players[self.__active_player_index]
    if player.player_controller != null:
-      player.player_controller.handle_attack_state_source_selected(Callable(self, "__attack_select_destination_country"), 
-                                                                   Callable($GameBoard, "get_countries_that_neighbor"), 
+      player.player_controller.handle_attack_state_source_selected(self.__attack_select_destination_country, 
+                                                                   $GameBoard.get_countries_that_neighbor, 
                                                                    self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY],
                                                                    self.__player_occupations, 
                                                                    self.__deployments)
@@ -581,7 +592,7 @@ func _on_attack_destination_selected_state_entered() -> void:
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = self.__players[self.__active_player_index]
    if player.player_controller != null:
-      player.player_controller.handle_attack_state_destination_selected(Callable(self, "__attack_set_die_count_and_roll"), 
+      player.player_controller.handle_attack_state_destination_selected(self.__attack_set_die_count_and_roll, 
                                                                         ATTACKING_COUNTRY,
                                                                         DEFENDING_COUNTRY,
                                                                         self.__player_occupations, 
@@ -632,7 +643,15 @@ func __attack_set_die_count_and_roll(die_count: int):
    assert(self.__state_machine_metadata.has(self.__NUM_ATTACKER_DICE_KEY), "Num attacker dice not set previously!")
    
    self._on_attack_destination_selected_die_count_change_requested(self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY], die_count)
-   self._on_attack_destination_selected_roll_requested()
+   
+   # Add delay if player is being controlled by AI
+   if self.__ai_delay_enabled and self.__players[self.__active_player_index].player_controller != null:
+      var ai_delay_timer := Types.StartAndForgetTimer.new(self._on_attack_destination_selected_roll_requested)
+      ai_delay_timer.name = "AiDelayTimer"
+      self.add_child(ai_delay_timer)
+      ai_delay_timer.start(self.__attack_screen_ai_delay)
+   else:
+      self._on_attack_destination_selected_roll_requested()
    
 ## Attack (Rolling) Subphase ########################################################################################### Attack (Rolling) Subphase
 func _on_attack_rolling_state_entered() -> void:
@@ -764,11 +783,11 @@ func _on_attack_victory_state_entered() -> void:
       # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
       var player = self.__players[self.__active_player_index]
       if player.player_controller != null:
-         player.player_controller.handle_attack_state_victory(Callable(self, "__attack_victory_set_troop_count_and_confirm"), 
-                                                                       ATTACKING_COUNTRY,
-                                                                       DEFENDING_COUNTRY,
-                                                                       self.__player_occupations, 
-                                                                       self.__deployments)
+         player.player_controller.handle_attack_state_victory(self.__attack_victory_set_troop_count_and_confirm, 
+                                                              ATTACKING_COUNTRY,
+                                                              DEFENDING_COUNTRY,
+                                                              self.__player_occupations, 
+                                                              self.__deployments)
                                                                         
    else:
       self.__attack_victory_move_conquering_armies()
@@ -837,7 +856,15 @@ func __attack_victory_set_troop_count_and_confirm(troop_count: int):
    assert(self.__state_machine_metadata.has(self.__NUM_TROOPS_TO_MOVE_KEY), "Num attackers to move not set previously")
    
    self._on_attack_victory_troop_count_change_requested(self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY], troop_count)
-   self._on_attack_victory_troop_movement_confirm_requested()
+   
+   # Add delay if player is being controlled by AI
+   if self.__ai_delay_enabled and self.__players[self.__active_player_index].player_controller != null:
+      var ai_delay_timer := Types.StartAndForgetTimer.new(self._on_attack_victory_troop_movement_confirm_requested)
+      ai_delay_timer.name = "AiDelayTimer"
+      self.add_child(ai_delay_timer)
+      ai_delay_timer.start(self.__victory_screen_ai_delay)
+   else:
+      self._on_attack_victory_troop_movement_confirm_requested()
 
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:

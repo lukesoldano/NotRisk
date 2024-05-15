@@ -14,6 +14,7 @@ class_name GameBoard
 # TODO: Long Term
 #
 # Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
+# Otherwise make country type stem from gameboard so that it's not defined in Types
 # 
 ########################################################################################################################
 

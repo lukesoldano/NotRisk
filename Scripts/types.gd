@@ -71,3 +71,23 @@ class Occupation:
    func _init(i_country: Types.Country, i_deployment: Types.Deployment):
       self.country = i_country
       self.deployment = i_deployment
+      
+class StartAndForgetTimer extends Node:
+   var __timer := Timer.new()
+   var __callable: Callable
+   
+   func _init(callable: Callable, one_shot: bool = true):
+      self.__callable = callable
+      
+      self.__timer.one_shot = one_shot
+      self.__timer.connect("timeout", self._on_timeout)
+      self.add_child(self.__timer)
+      
+   func start(time_sec: int) -> void:
+      self.__timer.start(time_sec)
+      
+   func _on_timeout() -> void:
+      self.__callable.call()
+      if self.__timer.one_shot:
+         self.remove_child(self.__timer)
+         queue_free()
