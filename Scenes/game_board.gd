@@ -5,16 +5,14 @@ extends Node2D
 class_name GameBoard
 
 ########################################################################################################################
-# TODO's
-#
 # TODO: Short Term
 #
-# Move next phase button into GameBoardHUD and out of GameBoard
+# TODO: Move next phase button into GameBoardHUD and out of GameBoard
 #
 # TODO: Long Term
 #
-# Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
-# Otherwise make country type stem from gameboard so that it's not defined in Types
+# TODO: Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
+# TODO: Otherwise make country type stem from gameboard so that it's not defined in Types
 # 
 ########################################################################################################################
 

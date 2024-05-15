@@ -5,23 +5,24 @@ extends Node
 class_name GameEngine
 
 ########################################################################################################################
-# TODO's
-#
 # TODO: Short Term
 #
-# Prevent next phase from showing while any popups are active
-# State machine/other solution for winning game or being knocked out
-# Playing cards subphase of reinforce
-# Logic to give user a card if countries captured > 0
-# Give conquering player losers cards if loser knocked out of game
-# If upon conquering, player has 5+ cards, send them back to reinforce stage
-# Change name of __player_occupations member to something that doesn't clash with other definition of the term "occupation"
-# Potentially rework terminology and types of occupations/deployments overall as it is not as simple as it could be at first glance
+# TODO: It probably makes sense for PlayerTurnStateMachine to be internal to the InProgress state of GameStateMachine (ponder this)
+# TODO: Rename next_phase_requested to be specific to player turn phase and all player turn state machine fns/vars that are named generally
+# TODO: Prevent next phase from showing while any popups are active
+# TODO: State machine/other solution for winning game or being knocked out
+# TODO: Playing cards subphase of reinforce
+# TODO: Logic to give user a card if countries captured > 0
+# TODO: Give conquering player losers cards if loser knocked out of game
+# TODO: If upon conquering, player has 5+ cards, send them back to reinforce stage
+# TODO: Change name of __player_occupations member to something that doesn't clash with other definition of the term "occupation"
+# TODO: Potentially rework terminology and types of occupations/deployments overall as it is not as simple as it could be at first glance
 #
 # TODO: Long Term
 #
-# Have GameEngine be initialized elsewhere instead of being filled with a dummy player list
-# Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
+# TODO: Have GameEngine be initialized elsewhere instead of being filled with a dummy player list
+# TODO: Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
+# TODO: Add other victory conditions
 # 
 ########################################################################################################################
 
@@ -57,7 +58,8 @@ enum AttackTurnSubPhase
    SOURCE_SELECTED = 1,
    DESTINATION_SELECTED = 2,
    ROLLING = 3,
-   VICTORY = 4
+   VICTORY = 4,
+   OPPONENT_KNOCKED_OUT = 5
 }
 
 # Needed for signal output to UI
@@ -75,7 +77,7 @@ enum TroopMovementType
 }
 
 var __local_player_index: int = 4
-var __active_player_index: int = -1
+var __active_player_index: int = 0
 var __active_turn_phase: TurnPhase = TurnPhase.START
 
 var __players: Array[Player] = [
@@ -99,6 +101,7 @@ const __NUM_DEFENDER_DICE_KEY = "num_defense_dice"
 const __NUM_TROOPS_TO_MOVE_KEY = "num_troops_to_move"
 const __NUM_REINFORCE_MOVEMENTS_UTILIZED = "num_reinforces_utilized"
 const __COUNTRIES_CONQUERED_KEY = "countries_counquered"
+const __KNOCKED_OUT_PLAYER = "knocked_out_player"
 var __state_machine_metadata: Dictionary = {}
 
 #func _init(players: Array[Player]):
@@ -114,52 +117,42 @@ func _ready():
    
    self.connect("turn_phase_updated", $GameBoard._on_turn_phase_updated)
    $GameBoard.connect("next_phase_requested", self._on_next_phase_requested)
-   
-func __log_deployments() -> void:
-   Logger.log_message("-----------------------------------------------------------------------------------------------")
-   Logger.log_message("CURRENT DEPLOYMENTS: ")
-   for player in self.__players:
-      Logger.log_indented_message(1, str(player))
-      for occupied_country in self.__player_occupations[player]:
-         Logger.log_indented_message(2, "Country: " + Types.Country.keys()[occupied_country] + " Troops: " + str(self.__deployments[occupied_country].troop_count))
-   Logger.log_message("-----------------------------------------------------------------------------------------------")
-
-func __generate_random_deployments() -> void:
-   self.__player_occupations.clear()
-   
-   var remaining_troop_count: Dictionary = {}
-   for player in self.__players:
-      self.__player_occupations[player] = []
-      remaining_troop_count[player] = Constants.STARTING_TROOP_COUNTS[self.__players.size()]
-   
-   # First assign countries
-   var num_countries = Types.Country.size()
-   var num_countries_assigned = 0
-   
-   while num_countries_assigned != num_countries:
-      for player in self.__players:
-         var country = randi() % num_countries
-         while self.__deployments.has(country):
-            country = randi() % num_countries
-         
-         self.__player_occupations[player].append(country)
-         self.__deployments[country] = Types.Deployment.new(player, 1)
-      
-         num_countries_assigned += 1
-         remaining_troop_count[player] -= 1
-         assert(remaining_troop_count[player] >= 0, "Ran out of troop assignments in country selection!")
-      
-         if num_countries_assigned == num_countries:
-            break
-            
-   # Now reinforce owned countries
-   for player in self.__players:
-      while remaining_troop_count[player] > 0:
-         self.__deployments[self.__player_occupations[player][randi() % self.__player_occupations[player].size()]].troop_count += 1
-         remaining_troop_count[player] -= 1
     
 ########################################################################################################################
-## State Machine Logic ################################################################################################# Start State Machine Logic     
+## Game State Machine Logic ############################################################################################ Start Game State Machine Logic     
+########################################################################################################################
+
+## Start Phase ######################################################################################################### Start Phase
+func _on_game_start_state_entered():
+   Logger.log_message("GAME STARTED")
+   $GameStateMachine.send_event("StartToInProgress")
+
+## In Progress Phase ################################################################################################### In Progress Phase
+func _on_game_in_progress_state_entered():
+   Logger.log_message("GAME IN PROGRESS")
+
+## End Phase ########################################################################################################### End Phase
+func _on_game_end_state_entered():
+   Logger.log_message("GAME ENDED")
+   
+   # Determine if victory goes to last remaining player or player with most countries
+   var victor: Player
+   if self.__num_players_remaining() == 1:
+      victor = self.__get_last_remaining_player()
+   else:
+      # TODO: Add other victory conditions in case a game is quit before there is only one player left
+      pass
+      
+   # TODO: Remove
+   $GameBoardHUD.show_debug_label("Player: " + str(victor) + " is victorious!!!")
+   #
+   
+########################################################################################################################
+######################################################################################################################## End Game State Machine Logic    
+########################################################################################################################
+   
+########################################################################################################################
+## Player Turn State Machine Logic ##################################################################################### Start Player Turn State Machine Logic     
 ########################################################################################################################
 
 # Clears all state machine metadata that shouldn't persist between phases of a turn
@@ -202,7 +195,6 @@ func _on_next_phase_requested() -> void:
 
 ## Start Phase ######################################################################################################### Start Phase
 func _on_start_state_entered() -> void:
-   self.__active_player_index = (self.__active_player_index + 1) % self.__players.size()
    self.__active_turn_phase = TurnPhase.START
    
    # CLEAR ALL METADATA as we are entering a new player's turn
@@ -790,8 +782,7 @@ func _on_attack_victory_state_entered() -> void:
                                                               self.__deployments)
                                                                         
    else:
-      self.__attack_victory_move_conquering_armies()
-      $PlayerTurnStateMachine.send_event("VictoryToIdle")
+      self._on_attack_victory_troop_movement_confirm_requested()
    
 func _on_attack_victory_state_exited() -> void:
    if $GameBoardHUD.is_troop_movement_popup_showing():
@@ -827,8 +818,17 @@ func _on_attack_victory_troop_count_change_requested(old_troop_count: int, new_t
                                            self.__deployments[ATTACKING_COUNTRY].troop_count - 1)
    
 func _on_attack_victory_troop_movement_confirm_requested() -> void:
+   assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Destination country not set previously!")
+   
+   var DEFENDING_PLAYER = self.__deployments[self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]].player
+   
    self.__attack_victory_move_conquering_armies()
-   $PlayerTurnStateMachine.send_event("VictoryToIdle")
+   
+   if self.__is_player_knocked_out(DEFENDING_PLAYER):
+      self.__state_machine_metadata[self.__KNOCKED_OUT_PLAYER] = DEFENDING_PLAYER
+      $PlayerTurnStateMachine.send_event("VictoryToOpponentKnockedOut")
+   else:
+      $PlayerTurnStateMachine.send_event("VictoryToIdle")
    
 func __attack_victory_move_conquering_armies():
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
@@ -852,7 +852,7 @@ func __attack_victory_move_conquering_armies():
    $GameBoard.set_country_deployment(ATTACKING_COUNTRY, self.__deployments[ATTACKING_COUNTRY])
    $GameBoard.set_country_deployment(DEFENDING_COUNTRY, self.__deployments[DEFENDING_COUNTRY])
    
-func __attack_victory_set_troop_count_and_confirm(troop_count: int):
+func __attack_victory_set_troop_count_and_confirm(troop_count: int) -> void:
    assert(self.__state_machine_metadata.has(self.__NUM_TROOPS_TO_MOVE_KEY), "Num attackers to move not set previously")
    
    self._on_attack_victory_troop_count_change_requested(self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY], troop_count)
@@ -865,6 +865,35 @@ func __attack_victory_set_troop_count_and_confirm(troop_count: int):
       ai_delay_timer.start(self.__victory_screen_ai_delay)
    else:
       self._on_attack_victory_troop_movement_confirm_requested()
+      
+## Attack (Victory) Subphase ########################################################################################### Attack (Victory) Subphase
+func _on_attack_opponent_knocked_out_state_entered() -> void:
+   Logger.log_message(str(self.__players[self.__active_player_index]) + 
+                      " entered subphase: " + AttackTurnSubPhase.keys()[AttackTurnSubPhase.OPPONENT_KNOCKED_OUT] + 
+                      " of phase: " + 
+                      TurnPhase.keys()[self.__active_turn_phase])
+                     
+   assert(self.__state_machine_metadata.has(self.__KNOCKED_OUT_PLAYER), "Knocked out player was not set previously")
+   
+   var KNOCKED_OUT_PLAYER: Player = self.__state_machine_metadata[self.__KNOCKED_OUT_PLAYER]
+                     
+   Logger.log_message("Player: " + str(KNOCKED_OUT_PLAYER) + " was knocked out!")
+   
+   # TODO: Remove
+   $GameBoardHUD.show_debug_label("Player: " + str(KNOCKED_OUT_PLAYER) + " was knocked out!")
+   
+   var transition_func = func():
+      $GameBoardHUD.hide_debug_label()
+      if self.__num_players_remaining() == 1:
+         $GameStateMachine.send_event("InProgressToEnd")
+      else:
+         $PlayerTurnStateMachine.send_event("OpponentKnockedOutToIdle")
+      
+   var player_knocked_out_timer := Types.StartAndForgetTimer.new(transition_func)
+   player_knocked_out_timer.name = "PlayerKnockedOutTimer"
+   self.add_child(player_knocked_out_timer)
+   player_knocked_out_timer.start(5)
+   #
 
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:
@@ -1078,6 +1107,88 @@ func _on_end_state_entered() -> void:
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
    $PlayerTurnStateMachine.send_event("EndToStart")
+   
+func _on_end_state_exited() -> void:
+   # Determine next player, skip any players who have been knocked out
+   var next_player_index = (self.__active_player_index + 1) % self.__players.size()
+   while self.__is_player_index_knocked_out(next_player_index):
+      next_player_index = (next_player_index + 1) % self.__players.size()
+      assert(next_player_index != self.__active_player_index, 
+             "Could not find another player remaining except for current player: " + str(self.__players[self.__active_player_index]))
+      
+   self.__active_player_index = next_player_index
 
 ########################################################################################################################
+######################################################################################################################## End Player Turn State Machine Logic    
 ########################################################################################################################
+
+func __is_player_index_knocked_out(player_index: int) -> bool:
+   assert(player_index < self.__players.size(), "Invalid player index provided")
+   return self.__is_player_knocked_out(self.__players[player_index])
+
+func __is_player_knocked_out(player: Player) -> bool:
+   assert(self.__player_occupations.has(player), "Invalid player provided")
+   return self.__player_occupations[player].size() == 0
+   
+func __num_players_remaining() -> int:
+   var num_players_remaining := 0
+   for player in self.__players:
+      if !self.__is_player_knocked_out(player):
+         num_players_remaining += 1
+      
+   assert(num_players_remaining != 0, "Somehow, no players are still remaining in the game")
+   
+   return num_players_remaining
+   
+func __get_last_remaining_player() -> Player:
+   assert(self.__num_players_remaining() == 1, "Can't get last remaining player as there are multiple left!")
+   
+   for player in self.__players:
+      if !self.__is_player_knocked_out(player):
+         return player
+         
+   assert(false, "Could not find the last remaining player!")
+   return null
+
+func __generate_random_deployments() -> void:
+   self.__player_occupations.clear()
+   
+   var remaining_troop_count: Dictionary = {}
+   for player in self.__players:
+      self.__player_occupations[player] = []
+      remaining_troop_count[player] = Constants.STARTING_TROOP_COUNTS[self.__players.size()]
+   
+   # First assign countries
+   var num_countries = Types.Country.size()
+   var num_countries_assigned = 0
+   
+   while num_countries_assigned != num_countries:
+      for player in self.__players:
+         var country = randi() % num_countries
+         while self.__deployments.has(country):
+            country = randi() % num_countries
+         
+         self.__player_occupations[player].append(country)
+         self.__deployments[country] = Types.Deployment.new(player, 1)
+      
+         num_countries_assigned += 1
+         remaining_troop_count[player] -= 1
+         assert(remaining_troop_count[player] >= 0, "Ran out of troop assignments in country selection!")
+      
+         if num_countries_assigned == num_countries:
+            break
+            
+   # Now reinforce owned countries
+   for player in self.__players:
+      while remaining_troop_count[player] > 0:
+         self.__deployments[self.__player_occupations[player][randi() % self.__player_occupations[player].size()]].troop_count += 1
+         remaining_troop_count[player] -= 1
+
+func __log_deployments() -> void:
+   Logger.log_message("-----------------------------------------------------------------------------------------------")
+   Logger.log_message("CURRENT DEPLOYMENTS: ")
+   for player in self.__players:
+      Logger.log_indented_message(1, str(player))
+      for occupied_country in self.__player_occupations[player]:
+         Logger.log_indented_message(2, "Country: " + Types.Country.keys()[occupied_country] + " Troops: " + str(self.__deployments[occupied_country].troop_count))
+   Logger.log_message("-----------------------------------------------------------------------------------------------")

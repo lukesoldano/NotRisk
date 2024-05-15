@@ -1,5 +1,6 @@
-Timer
+StateChart
 Label
+Timer
 CanvasLayer
 Button
 Sprite2D
@@ -11,5 +12,3 @@ TextureRect
 CollisionShape2D
 Area2D
 Node2D
-StateChart
-Node

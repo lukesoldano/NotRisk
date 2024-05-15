@@ -3,16 +3,14 @@ extends Node2D
 class_name PlayerController
 
 ########################################################################################################################
-# TODO's
-#
 # TODO: Short Term
 #
 # 
 #
 # TODO: Long Term
 #
-# Make logic for deploy, attack, and reinforce smarter (reinforce currently does nothing)
-# Add weights to create personas for the player controller that can be used in helping make decisions
+# TODO: Make logic for deploy, attack, and reinforce smarter (reinforce currently does nothing)
+# TODO: Add weights to create personas for the player controller that can be used in helping make decisions
 # 
 ########################################################################################################################
 
@@ -178,8 +176,8 @@ func handle_attack_state_victory(set_troop_count_and_confirm_callable: Callable,
    assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country), "Player assigned to this player controller does not own the provided source_country!")
    assert(deployments.has(source_country), "Deployments map does not contain source_country!")
    
-   # This is all temporary logic, but we are going to move armies equal to the max number of dice
-   set_troop_count_and_confirm_callable.call_deferred(Utilities.get_max_attacker_die_count_for_troop_count(deployments[source_country].troop_count))
+   # This is all temporary logic, but we are going to move the max armies possible
+   set_troop_count_and_confirm_callable.call_deferred(deployments[source_country].troop_count - 1)
 
 # Returns true if moves to be made, false if no further moves desired
 func handle_reinforce_state_idle() -> bool:

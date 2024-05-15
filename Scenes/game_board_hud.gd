@@ -5,16 +5,15 @@ extends CanvasLayer
 class_name GameBoardHUD
 
 ########################################################################################################################
-# TODO's
-#
 # TODO: Short Term
 #
-# Remove cancel button from attack window, right-click rules all
+# TODO: Remove cancel button from attack window, right-click rules all
 #
 # TODO: Long Term
 #
-# Make popups individual scenes
-# Add drawn arrow from selected country to make right click requirement to cancel more obvious
+# TODO: Make popups individual scenes
+# TODO: Add drawn arrow from selected country to make right click requirement to cancel more obvious
+# TODO: Get rid of debug label type, it is temporary
 # 
 ########################################################################################################################
 
@@ -39,10 +38,19 @@ const __REINFORCE_TITLE_STR = "Reinforce"
 @onready var __defend_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/DefenderDie1, $AttackPopupCanvasLayer/DefenderDie2]
 
 func _ready():
+   $DebugLabel.visible = false
    self.hide_deploy_reinforcements_remaining()
    self.hide_deploy_popup()
    self.hide_attack_popup()
    self.hide_troop_movement_popup()
+   
+func show_debug_label(message: String) -> void:
+   $DebugLabel.text = message
+   $DebugLabel.visible = true
+   
+func hide_debug_label() -> void:
+   $DebugLabel.visible = false
+   $DebugLabel.text = self.__DEFAULT_VALUE_STR
    
 ## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
 func is_deploy_reinforcements_remaining_showing() -> bool:
