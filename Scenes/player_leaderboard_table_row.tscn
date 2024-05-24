@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3 uid="uid://bf0qruioiai6v"]
+
+[ext_resource type="Script" path="res://Scenes/player_leaderboard_table_row.gd" id="1_0f0vu"]
+[ext_resource type="Texture2D" uid="uid://rh88cagh2rch" path="res://Assets/kenney_boardgame-pack/PNG/Pieces (Blue)/pieceBlue_multi18.png" id="1_7pt8g"]
+
+[node name="PlayerLeaderboardTableRow" type="HBoxContainer"]
+offset_right = 210.0
+offset_bottom = 54.0
+script = ExtResource("1_0f0vu")
+
+[node name="PlayerTextureRect" type="TextureRect" parent="."]
+layout_mode = 2
+texture = ExtResource("1_7pt8g")
+expand_mode = 2
+
+[node name="VSeparator1" type="VSeparator" parent="."]
+layout_mode = 2
+
+[node name="NumCountriesLabel" type="Label" parent="."]
+layout_mode = 2
+text = "999
+"
+
+[node name="VSeparator2" type="VSeparator" parent="."]
+layout_mode = 2
+
+[node name="NumArmiesLabel" type="Label" parent="."]
+layout_mode = 2
+text = "999"
+
+[node name="VSeparator3" type="VSeparator" parent="."]
+layout_mode = 2
+
+[node name="NumReinforcementsLabel" type="Label" parent="."]
+layout_mode = 2
+text = "999"

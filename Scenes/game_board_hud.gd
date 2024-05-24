@@ -52,6 +52,33 @@ func hide_debug_label() -> void:
    $DebugLabel.visible = false
    $DebugLabel.text = self.__DEFAULT_VALUE_STR
    
+## Player Leaderboard Table ############################################################################################
+func initialize_player_leaderboard_table(players: Array[Player], deployments: Dictionary) -> void:
+   const COLOR_INDEX = 0
+   const NUM_COUNTRIES_INDEX = 1
+   const NUM_ARMIES_INDEX = 2
+   const NUM_REINFORCEMENTS_INDEX = 3
+   
+   var table_rows: Array = []
+   
+   var current_index := 0
+   var player_indices: Dictionary = {}
+   for player in players:
+      player_indices[player] = current_index
+      table_rows.append([player.army_color, 0, 0, 0])
+      current_index += 1
+      
+   for deployment in deployments:
+      current_index = player_indices[deployments[deployment].player]
+      table_rows[current_index][NUM_COUNTRIES_INDEX] += 1
+      table_rows[current_index][NUM_ARMIES_INDEX] += deployments[deployment].troop_count
+      
+   for table_row in table_rows:
+      $PlayerLeaderboardTable.add_entry(table_row[COLOR_INDEX], 
+                                        table_row[NUM_COUNTRIES_INDEX], 
+                                        table_row[NUM_ARMIES_INDEX], 
+                                        table_row[NUM_REINFORCEMENTS_INDEX])
+   
 ## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
 func is_deploy_reinforcements_remaining_showing() -> bool:
    return $DeployReinforcementsRemainingCanvasLayer.visible

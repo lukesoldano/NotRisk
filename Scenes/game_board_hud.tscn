@@ -1,7 +1,8 @@
-[gd_scene load_steps=29 format=3 uid="uid://cf7w6o55pepoh"]
+[gd_scene load_steps=30 format=3 uid="uid://cf7w6o55pepoh"]
 
 [ext_resource type="Script" path="res://Scenes/game_board_hud.gd" id="1_0m68m"]
 [ext_resource type="Texture2D" uid="uid://dh4nkpli41k7r" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark24.png" id="2_ds0wd"]
+[ext_resource type="PackedScene" uid="uid://dyqmx2rbblwrb" path="res://Scenes/player_leaderboard_table.tscn" id="2_lncjn"]
 [ext_resource type="SpriteFrames" uid="uid://dfr17kog3wwre" path="res://Resources/attack_dice.tres" id="2_qieay"]
 [ext_resource type="Texture2D" uid="uid://c4w07sryq3opj" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark25.png" id="3_5a8i7"]
 [ext_resource type="SpriteFrames" uid="uid://v83f83u75j01" path="res://Resources/defense_dice.tres" id="3_yx54i"]
@@ -89,6 +90,7 @@ default_font_size = 32
 script = ExtResource("1_0m68m")
 
 [node name="DebugLabel" type="Label" parent="."]
+visible = false
 offset_top = 512.0
 offset_right = 1920.0
 offset_bottom = 640.0
@@ -96,6 +98,12 @@ text = "TEST"
 label_settings = SubResource("LabelSettings_x1oy0")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="PlayerLeaderboardTable" parent="." instance=ExtResource("2_lncjn")]
+offset_left = 1768.0
+offset_top = 16.0
+offset_right = 1768.0
+offset_bottom = 16.0
 
 [node name="DeployReinforcementsRemainingCanvasLayer" type="CanvasLayer" parent="."]
 visible = false

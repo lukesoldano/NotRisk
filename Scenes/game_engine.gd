@@ -76,16 +76,17 @@ enum TroopMovementType
    REINFORCE = 1
 }
 
-var __local_player_index: int = 4
+var __local_player_index: int = 5
 var __active_player_index: int = 0
 var __active_turn_phase: TurnPhase = TurnPhase.START
 
 var __players: Array[Player] = [
-   Player.new(Player.PlayerType.AI, "Ben", Color.AQUA),
-   Player.new(Player.PlayerType.AI, "Sam", Color.GREEN),
-   Player.new(Player.PlayerType.AI, "Dennis", Color.YELLOW),
-   Player.new(Player.PlayerType.AI, "Austin", Color.PURPLE),
-   Player.new(Player.PlayerType.HUMAN, "Luke", Color.RED)
+   Player.new(Player.PlayerType.AI, "Ben", Constants.SUPPORTED_ARMY_COLORS[0]),
+   Player.new(Player.PlayerType.AI, "Sam", Constants.SUPPORTED_ARMY_COLORS[1]),
+   Player.new(Player.PlayerType.AI, "Dennis", Constants.SUPPORTED_ARMY_COLORS[2]),
+   Player.new(Player.PlayerType.AI, "Austin", Constants.SUPPORTED_ARMY_COLORS[3]),
+   Player.new(Player.PlayerType.AI, "Mike", Constants.SUPPORTED_ARMY_COLORS[4]),
+   Player.new(Player.PlayerType.HUMAN, "Luke", Constants.SUPPORTED_ARMY_COLORS[5])
 ]
 
 var __player_occupations: Dictionary = {}
@@ -108,12 +109,18 @@ var __state_machine_metadata: Dictionary = {}
    #self.__players = players
 
 func _ready():
-   assert(self.__players.size() >= 2 && self.__players.size() <= 6, "Invalid player count!")
+   # Validate player list
+   assert(self.__players.size() >= Constants.MIN_NUM_PLAYERS && self.__players.size() <= Constants.MAX_NUM_PLAYERS, "Invalid player count!")
    assert(self.__players[self.__local_player_index].player_type == Player.PlayerType.HUMAN, "Local player can only be Human!")
+   
+   # Validate color selections
+   for player in self.__players:
+      assert(Constants.SUPPORTED_ARMY_COLORS.has(player.army_color), "Unsupported army color assigned to player!")
    
    self.__generate_random_deployments()
    self.__log_deployments()
    $GameBoard.populate(self.__deployments)
+   $GameBoardHUD.initialize_player_leaderboard_table(self.__players, self.__deployments)
    
    self.connect("turn_phase_updated", $GameBoard._on_turn_phase_updated)
    $GameBoard.connect("next_phase_requested", self._on_next_phase_requested)
