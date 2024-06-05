@@ -34,3 +34,10 @@ layout_mode = 2
 [node name="NumReinforcementsLabel" type="Label" parent="."]
 layout_mode = 2
 text = "999"
+
+[node name="VSeparator4" type="VSeparator" parent="."]
+layout_mode = 2
+
+[node name="NumCardsLabel" type="Label" parent="."]
+layout_mode = 2
+text = "5"

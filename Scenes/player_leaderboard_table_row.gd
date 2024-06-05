@@ -6,18 +6,20 @@ class_name PlayerLeaderboardTableRow
 @export var num_countries: int = 999
 @export var num_armies: int = 999
 @export var num_reinforcements: int = 999
+@export var num_cards: int = 0
 
-func set_values(i_player_color: Color, i_num_countries: int, i_num_armies: int, i_num_reinforcements: int) -> void:
+func set_values(i_player_color: Color, i_num_countries: int, i_num_armies: int, i_num_reinforcements: int, i_num_cards: int) -> void:
    self.player_color = i_player_color
    self.num_countries = i_num_countries
    self.num_armies = i_num_armies
    self.num_reinforcements = i_num_reinforcements
+   self.num_cards = i_num_cards
    
    var image = null
    match self.player_color:
       Color.DIM_GRAY:
          image = Image.load_from_file("res://Assets/kenney_boardgame-pack/PNG/Pieces (Black)/pieceBlack_border00.png")
-      Color.BLUE:
+      Color.CYAN:
          image = Image.load_from_file("res://Assets/kenney_boardgame-pack/PNG/Pieces (Blue)/pieceBlue_border01.png")
       Color.GREEN:
          image = Image.load_from_file("res://Assets/kenney_boardgame-pack/PNG/Pieces (Green)/pieceGreen_border00.png")
@@ -37,12 +39,15 @@ func set_values(i_player_color: Color, i_num_countries: int, i_num_armies: int, 
    $NumCountriesLabel.text = str(self.num_countries)
    $NumArmiesLabel.text = str(self.num_armies)
    $NumReinforcementsLabel.text = str(self.num_reinforcements)
+   $NumCardsLabel.text = str(self.num_cards)
          
-func update_values(i_num_countries: int, i_num_armies: int, i_num_reinforcements: int) -> void:
+func update_values(i_num_countries: int, i_num_armies: int, i_num_reinforcements: int, i_num_cards: int) -> void:
    self.num_countries = i_num_countries
    self.num_armies = i_num_armies
    self.num_reinforcements = i_num_reinforcements
+   self.num_cards = i_num_cards
    
    $NumCountriesLabel.text = str(self.num_countries)
    $NumArmiesLabel.text = str(self.num_armies)
    $NumReinforcementsLabel.text = str(self.num_reinforcements)
+   $NumCardsLabel.text = str(self.num_cards)

@@ -11,7 +11,7 @@ const MAX_NUM_DEFEND_DIE: int = 2
 
 const MAX_REINFORCES_ALLOWED: int = 1
 
-const SUPPORTED_ARMY_COLORS: Array[Color] = [Color.DIM_GRAY, Color.BLUE, Color.GREEN, Color.PURPLE, Color.RED, Color.YELLOW]
+const SUPPORTED_ARMY_COLORS: Array[Color] = [Color.DIM_GRAY, Color.CYAN, Color.GREEN, Color.PURPLE, Color.RED, Color.YELLOW]
 
 # Index correlates to number of players
 const STARTING_TROOP_COUNTS = [

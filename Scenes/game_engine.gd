@@ -89,6 +89,7 @@ var __players: Array[Player] = [
    Player.new(Player.PlayerType.HUMAN, "Luke", Constants.SUPPORTED_ARMY_COLORS[5])
 ]
 
+var __player_cards: Dictionary = {}
 var __player_occupations: Dictionary = {}
 var __deployments: Dictionary = {}
 
@@ -116,6 +117,10 @@ func _ready():
    # Validate color selections
    for player in self.__players:
       assert(Constants.SUPPORTED_ARMY_COLORS.has(player.army_color), "Unsupported army color assigned to player!")
+   
+   # Assign players to cards dictionary
+   for player in self.__players:
+      self.__player_cards[player] = []
    
    self.__generate_random_deployments()
    self.__log_deployments()
@@ -1113,6 +1118,19 @@ func _on_end_state_entered() -> void:
    self.__log_deployments()
    
    self.turn_phase_updated.emit(self.__players[self.__active_player_index], self.__active_turn_phase)
+   
+   var countries_conquered: int = 0
+   if self.__state_machine_metadata.has(self.__COUNTRIES_CONQUERED_KEY):
+      countries_conquered = self.__state_machine_metadata[self.__COUNTRIES_CONQUERED_KEY]
+      
+   # If player conquered any countries, give them a card
+   if countries_conquered > 0:
+      var random_card: Types.CardType = Types.CardType.values().pick_random()
+      self.__player_cards[self.__players[self.__active_player_index]].append(random_card)
+      
+      if self.__local_player_index == self.__active_player_index:
+         $GameBoardHUD.add_card_to_hand(random_card)
+   
    $PlayerTurnStateMachine.send_event("EndToStart")
    
 func _on_end_state_exited() -> void:

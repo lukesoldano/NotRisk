@@ -1,5 +1,12 @@
 class_name Types
 
+enum CardType
+{
+   INFANTRY = 0,
+   CAVALRY = 1,
+   ARTILLERY = 2
+}
+
 enum Continent
 {
    AFRICA = 0,

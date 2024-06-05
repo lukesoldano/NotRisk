@@ -58,6 +58,7 @@ func initialize_player_leaderboard_table(players: Array[Player], deployments: Di
    const NUM_COUNTRIES_INDEX = 1
    const NUM_ARMIES_INDEX = 2
    const NUM_REINFORCEMENTS_INDEX = 3
+   const NUM_CARDS_INDEX = 4
    
    var table_rows: Array = []
    
@@ -65,7 +66,7 @@ func initialize_player_leaderboard_table(players: Array[Player], deployments: Di
    var player_indices: Dictionary = {}
    for player in players:
       player_indices[player] = current_index
-      table_rows.append([player.army_color, 0, 0, 0])
+      table_rows.append([player.army_color, 0, 0, 0, 0])
       current_index += 1
       
    for deployment in deployments:
@@ -77,7 +78,8 @@ func initialize_player_leaderboard_table(players: Array[Player], deployments: Di
       $PlayerLeaderboardTable.add_entry(table_row[COLOR_INDEX], 
                                         table_row[NUM_COUNTRIES_INDEX], 
                                         table_row[NUM_ARMIES_INDEX], 
-                                        table_row[NUM_REINFORCEMENTS_INDEX])
+                                        table_row[NUM_REINFORCEMENTS_INDEX],
+                                        table_row[NUM_CARDS_INDEX])
    
 ## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
 func is_deploy_reinforcements_remaining_showing() -> bool:
@@ -344,3 +346,7 @@ func _on_troop_movement_confirm_button_pressed() -> void:
    var troop_count = $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text
    Logger.log_message("LocalPlayer: Confirm post-victory troop movement requested with troop count: " + troop_count)
    self.troop_movement_confirm_requested.emit()
+
+## Player Hand #########################################################################################################
+func add_card_to_hand(card: Types.CardType) -> void:
+   pass

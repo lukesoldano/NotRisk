@@ -1,12 +1,12 @@
-VSeparator
-HSeparator
-VBoxContainer
+Control
 MarginContainer
-Label
+VSeparator
 TextureRect
 HBoxContainer
+HSeparator
+VBoxContainer
+Label
 ColorRect
-Control
 StateChart
 Timer
 CanvasLayer
