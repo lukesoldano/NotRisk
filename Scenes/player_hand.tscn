@@ -1,8 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://bxsqe331nn2l"]
+[gd_scene load_steps=2 format=3 uid="uid://bxsqe331nn2l"]
 
-[ext_resource type="Texture2D" uid="uid://bkiv0ml7be4m8" path="res://Assets/kenney_boardgame-pack/PNG/Cards/cardClubsJ.png" id="1_in5vk"]
-[ext_resource type="Texture2D" uid="uid://cnei0s15756yw" path="res://Assets/kenney_boardgame-pack/PNG/Cards/cardClubsQ.png" id="2_5fye5"]
-[ext_resource type="Texture2D" uid="uid://wb4wq366556n" path="res://Assets/kenney_boardgame-pack/PNG/Cards/cardClubsK.png" id="3_useoc"]
+[ext_resource type="Script" path="res://Scenes/player_hand.gd" id="1_0j5px"]
 
 [node name="PlayerHand" type="Control"]
 layout_mode = 3
@@ -10,43 +8,10 @@ anchors_preset = 0
 offset_left = 720.0
 offset_right = 720.0
 offset_bottom = 190.0
+script = ExtResource("1_0j5px")
 
 [node name="HMarginContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
 offset_left = -720.0
-offset_right = -432.0
-offset_bottom = 88.0
-
-[node name="TextureRect1" type="TextureRect" parent="HMarginContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("1_in5vk")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TextureRect2" type="TextureRect" parent="HMarginContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("1_in5vk")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TextureRect3" type="TextureRect" parent="HMarginContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("2_5fye5")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TextureRect4" type="TextureRect" parent="HMarginContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("2_5fye5")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TextureRect5" type="TextureRect" parent="HMarginContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("3_useoc")
-expand_mode = 1
-stretch_mode = 5
+offset_right = -336.0
+offset_bottom = 128.0

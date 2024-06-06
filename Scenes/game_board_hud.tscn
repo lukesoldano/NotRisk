@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://cf7w6o55pepoh"]
+[gd_scene load_steps=31 format=3 uid="uid://cf7w6o55pepoh"]
 
 [ext_resource type="Script" path="res://Scenes/game_board_hud.gd" id="1_0m68m"]
 [ext_resource type="Texture2D" uid="uid://dh4nkpli41k7r" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark24.png" id="2_ds0wd"]
@@ -6,6 +6,7 @@
 [ext_resource type="SpriteFrames" uid="uid://dfr17kog3wwre" path="res://Resources/attack_dice.tres" id="2_qieay"]
 [ext_resource type="Texture2D" uid="uid://c4w07sryq3opj" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark25.png" id="3_5a8i7"]
 [ext_resource type="SpriteFrames" uid="uid://v83f83u75j01" path="res://Resources/defense_dice.tres" id="3_yx54i"]
+[ext_resource type="PackedScene" uid="uid://bxsqe331nn2l" path="res://Scenes/player_hand.tscn" id="7_320xa"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_x1oy0"]
 font_size = 48
@@ -511,6 +512,12 @@ offset_right = 1072.0
 offset_bottom = 893.0
 theme = SubResource("Theme_5u307")
 text = "Confirm"
+
+[node name="PlayerHand" parent="." instance=ExtResource("7_320xa")]
+offset_left = 728.0
+offset_top = 920.0
+offset_right = 728.0
+offset_bottom = 1104.0
 
 [connection signal="pressed" from="DeployPopupCanvasLayer/ReduceTroopsButton" to="." method="_on_deploy_reduce_troops_button_pressed"]
 [connection signal="pressed" from="DeployPopupCanvasLayer/IncreaseTroopsButton" to="." method="_on_deploy_increase_troops_button_pressed"]

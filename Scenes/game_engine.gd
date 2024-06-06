@@ -76,6 +76,8 @@ enum TroopMovementType
    REINFORCE = 1
 }
 
+const __DEPLOYMENT_LOGGING_ENABLED = false
+
 var __local_player_index: int = 5
 var __active_player_index: int = 0
 var __active_turn_phase: TurnPhase = TurnPhase.START
@@ -1210,10 +1212,11 @@ func __generate_random_deployments() -> void:
          remaining_troop_count[player] -= 1
 
 func __log_deployments() -> void:
-   Logger.log_message("-----------------------------------------------------------------------------------------------")
-   Logger.log_message("CURRENT DEPLOYMENTS: ")
-   for player in self.__players:
-      Logger.log_indented_message(1, str(player))
-      for occupied_country in self.__player_occupations[player]:
-         Logger.log_indented_message(2, "Country: " + Types.Country.keys()[occupied_country] + " Troops: " + str(self.__deployments[occupied_country].troop_count))
-   Logger.log_message("-----------------------------------------------------------------------------------------------")
+   if self.__DEPLOYMENT_LOGGING_ENABLED:
+      Logger.log_message("-----------------------------------------------------------------------------------------------")
+      Logger.log_message("CURRENT DEPLOYMENTS: ")
+      for player in self.__players:
+         Logger.log_indented_message(1, str(player))
+         for occupied_country in self.__player_occupations[player]:
+            Logger.log_indented_message(2, "Country: " + Types.Country.keys()[occupied_country] + " Troops: " + str(self.__deployments[occupied_country].troop_count))
+      Logger.log_message("-----------------------------------------------------------------------------------------------")

@@ -1,7 +1,8 @@
+TextureButton
+TextureRect
 Control
 MarginContainer
 VSeparator
-TextureRect
 HBoxContainer
 HSeparator
 VBoxContainer
@@ -11,4 +12,3 @@ StateChart
 Timer
 CanvasLayer
 Button
-Sprite2D

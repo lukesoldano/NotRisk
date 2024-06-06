@@ -349,4 +349,4 @@ func _on_troop_movement_confirm_button_pressed() -> void:
 
 ## Player Hand #########################################################################################################
 func add_card_to_hand(card: Types.CardType) -> void:
-   pass
+   $PlayerHand.add_card(card)
