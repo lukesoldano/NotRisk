@@ -28,6 +28,8 @@ signal attack_die_count_change_requested(old_num_dice: int, new_num_dice: int)
 signal troop_movement_confirm_requested()
 signal troop_movement_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
 
+signal territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool)
+
 const __DEFAULT_VALUE_STR = "-"
 const __DEFAULT_VALUE_COLOR = Color.WHITE
 
@@ -43,6 +45,9 @@ func _ready():
    self.hide_deploy_popup()
    self.hide_attack_popup()
    self.hide_troop_movement_popup()
+   self.enable_player_hand(false)
+   
+   $PlayerHand.connect("card_toggled", self._on_territory_card_toggled)
    
 func show_debug_label(message: String) -> void:
    $DebugLabel.text = message
@@ -350,3 +355,12 @@ func _on_troop_movement_confirm_button_pressed() -> void:
 ## Player Hand #########################################################################################################
 func add_card_to_hand(card: Types.CardType) -> void:
    $PlayerHand.add_card(card)
+   
+func remove_cards_from_hand(indices: Array[int]) -> void:
+   $PlayerHand.remove_cards(indices)
+   
+func enable_player_hand(enable: bool) -> void:
+   $PlayerHand.enable_hand(enable)
+
+func _on_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
+   self.territory_card_toggled.emit(index, card, toggled_on)

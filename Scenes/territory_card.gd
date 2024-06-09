@@ -22,14 +22,20 @@ func with_data(i_index: int, i_card: Types.CardType) -> TerritoryCard:
    
    match self.card:
       Types.CardType.INFANTRY:
-         self.texture_normal = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardSpadesJ.png")
+         var default_texture = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardSpadesJ.png")
+         self.texture_normal = default_texture
+         self.texture_disabled = default_texture
          self.texture_pressed = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardHeartsJ.png")
       Types.CardType.CAVALRY:
-         self.texture_normal = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardSpadesQ.png")
-         self.texture_pressed = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardHeartsJ.png")
+         var default_texture = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardSpadesQ.png")
+         self.texture_normal = default_texture
+         self.texture_disabled = default_texture
+         self.texture_pressed = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardHeartsQ.png")
       Types.CardType.ARTILLERY:
-         self.texture_normal = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardSpadesK.png")
-         self.texture_pressed = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardHeartsJ.png")
+         var default_texture = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardSpadesK.png")
+         self.texture_normal = default_texture
+         self.texture_disabled = default_texture
+         self.texture_pressed = load("res://Assets/kenney_boardgame-pack/PNG/Cards/cardHeartsK.png")
       _:
          assert(false, "Invalid card type provided!")
          
