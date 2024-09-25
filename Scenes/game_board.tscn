@@ -1,11 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://fim7aocqhl1u"]
+[gd_scene load_steps=4 format=3 uid="uid://fim7aocqhl1u"]
 
 [ext_resource type="Script" path="res://Scenes/game_board.gd" id="1_3bowi"]
 [ext_resource type="Texture2D" uid="uid://d2tn5oasxayna" path="res://Assets/Risk_board.svg.png" id="1_re4t4"]
 [ext_resource type="PackedScene" uid="uid://bubw5slieg3ja" path="res://Scenes/country.tscn" id="2_5rra6"]
-
-[sub_resource type="LabelSettings" id="LabelSettings_awjla"]
-font_size = 32
 
 [node name="GameBoard" type="Node2D"]
 script = ExtResource("1_3bowi")
@@ -438,22 +435,3 @@ position = Vector2(60, 344)
 country = 37
 country_label = "Venezuela"
 neighbors = Array[int]([5, 28, 4])
-
-[node name="Temp" type="Node2D" parent="."]
-
-[node name="PhaseInfoLabel" type="Label" parent="Temp"]
-offset_right = 1919.0
-offset_bottom = 47.0
-text = "PHASE INFO"
-label_settings = SubResource("LabelSettings_awjla")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="NextPhaseButton" type="Button" parent="Temp"]
-offset_left = 1721.0
-offset_top = 1028.0
-offset_right = 1901.0
-offset_bottom = 1059.0
-text = "Next Phase"
-
-[connection signal="pressed" from="Temp/NextPhaseButton" to="." method="_on_next_phase_button_pressed"]

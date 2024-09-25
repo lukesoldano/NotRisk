@@ -7,8 +7,6 @@ class_name GameBoard
 ########################################################################################################################
 # TODO: Short Term
 #
-# TODO: Move next phase button into GameBoardHUD and out of GameBoard
-#
 # TODO: Long Term
 #
 # TODO: Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
@@ -16,7 +14,6 @@ class_name GameBoard
 # 
 ########################################################################################################################
 
-signal next_phase_requested()
 signal country_clicked(country: Types.Country, action_tag: String)
 
 const CONTINENTS: Dictionary = {
@@ -193,13 +190,6 @@ func __validate_borders():
          assert(country != neighbor, "Country is neighboring itself!")
          assert(self.__country_node_map.has(neighbor), "Neighbor is not in node map!")
          assert(self.__country_node_map[neighbor].neighbors.count(country) != 0, "Neighbor does not have country as one if its neighbors!")
-
-func _on_turn_phase_updated(player: Player, phase: GameEngine.TurnPhase) -> void:
-   $Temp/PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + GameEngine.TurnPhase.keys()[phase]
-
-func _on_next_phase_button_pressed() -> void:
-   Logger.log_message("LocalPlayer: Next phase requested")
-   self.next_phase_requested.emit()
    
 func _on_country_clicked(country: Types.Country, action_tag: String) -> void:
    self.country_clicked.emit(country, action_tag)

@@ -22,6 +22,21 @@ static func get_num_reinforcements_earned(continents: Dictionary, continent_bonu
             num_reinforcements += continent_bonuses[continent]
             
    return num_reinforcements
+   
+static func get_territory_card_reward_for_all_of_a_kind(card_type: Types.CardType) -> int:
+   match card_type:
+      Types.CardType.INFANTRY:
+         return Constants.TERRITORY_CARD_REINFORCEMENT_REWARD_FOR_ALL_INFANTRY
+      Types.CardType.CAVALRY:
+         return Constants.TERRITORY_CARD_REINFORCEMENT_REWARD_FOR_ALL_CAVALRY
+      Types.CardType.ARTILLERY:
+         return Constants.TERRITORY_CARD_REINFORCEMENT_REWARD_FOR_ALL_ARTILLERY
+      _:
+         assert(false, "Unknown card type provided!")
+         return 0
+   
+static func get_territory_card_reward_for_one_of_each() -> int:
+   return Constants.TERRITORY_CARD_REINFORCEMENT_REWARD_FOR_ONE_OF_EACH
 
 static func get_max_attacker_die_count_for_troop_count(troop_count: int) -> int:
    assert(troop_count > 1, "Invalid troop count provided!")

@@ -17,6 +17,8 @@ class_name GameBoardHUD
 # 
 ########################################################################################################################
 
+signal next_phase_requested()
+
 signal deploy_cancel_requested()
 signal deploy_confirm_requested()
 signal deploy_troop_count_change_requested(old_troop_count: int, new_troop_count: int)
@@ -45,6 +47,7 @@ func _ready():
    self.hide_deploy_popup()
    self.hide_attack_popup()
    self.hide_troop_movement_popup()
+   self.enable_next_phase_button(true)
    self.enable_player_hand(false)
    
    $PlayerHand.connect("card_toggled", self._on_territory_card_toggled)
@@ -56,6 +59,17 @@ func show_debug_label(message: String) -> void:
 func hide_debug_label() -> void:
    $DebugLabel.visible = false
    $DebugLabel.text = self.__DEFAULT_VALUE_STR
+   
+## Next Phase Button ###################################################################################################
+func enable_next_phase_button(enable: bool) -> void:
+   $NextPhaseButton.disabled = !enable
+
+func _on_next_phase_button_pressed() -> void:
+   Logger.log_message("LocalPlayer: Next phase requested")
+   self.next_phase_requested.emit()
+   
+func _on_turn_phase_updated(player: Player, phase: GameEngine.TurnPhase) -> void:
+   $PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + GameEngine.TurnPhase.keys()[phase]
    
 ## Player Leaderboard Table ############################################################################################
 func initialize_player_leaderboard_table(players: Array[Player], deployments: Dictionary) -> void:

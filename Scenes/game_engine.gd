@@ -12,7 +12,6 @@ class_name GameEngine
 # TODO: Prevent next phase from showing while any popups are active
 # TODO: State machine/other solution for winning game or being knocked out
 # TODO: Playing cards subphase of reinforce
-# TODO: Logic to give user a card if countries captured > 0
 # TODO: Give conquering player losers cards if loser knocked out of game
 # TODO: If upon conquering, player has 5+ cards, send them back to reinforce stage
 # TODO: Change name of __player_occupations member to something that doesn't clash with other definition of the term "occupation"
@@ -20,6 +19,7 @@ class_name GameEngine
 #
 # TODO: Long Term
 #
+# TODO: Make territory cards part of a greater deck with assigned countries and country bonuses instead of randomly selected J,Q,K
 # TODO: Have GameEngine be initialized elsewhere instead of being filled with a dummy player list
 # TODO: Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
 # TODO: Add other victory conditions
@@ -130,8 +130,8 @@ func _ready():
    $GameBoard.populate(self.__deployments)
    $GameBoardHUD.initialize_player_leaderboard_table(self.__players, self.__deployments)
    
-   self.connect("turn_phase_updated", $GameBoard._on_turn_phase_updated)
-   $GameBoard.connect("next_phase_requested", self._on_next_phase_requested)
+   self.connect("turn_phase_updated", $GameBoardHUD._on_turn_phase_updated)
+   $GameBoardHUD.connect("next_phase_requested", self._on_next_phase_requested)
     
 ########################################################################################################################
 ## Game State Machine Logic ############################################################################################ Start Game State Machine Logic     
@@ -264,7 +264,7 @@ func _on_deploy_idle_state_entered() -> void:
                      
    if self.__is_local_player_turn():
       $GameBoard.connect("country_clicked", self._on_deploy_idle_country_clicked)
-      $GameBoardHUD.connect("territory_card_toggled", self.__on_first_territory_card_toggled)
+      $GameBoardHUD.connect("territory_card_toggled", self._on_first_territory_card_toggled)
       $GameBoardHUD.enable_player_hand(true)
       
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
@@ -275,7 +275,7 @@ func _on_deploy_idle_state_entered() -> void:
    
 func _on_deploy_idle_state_exited() -> void:
    if self.__is_local_player_turn():
-      $GameBoardHUD.disconnect("territory_card_toggled", self.__on_first_territory_card_toggled)
+      $GameBoardHUD.disconnect("territory_card_toggled", self._on_first_territory_card_toggled)
       $GameBoard.disconnect("country_clicked", self._on_deploy_idle_country_clicked)
       
 func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String) -> void:
@@ -307,12 +307,13 @@ func __deploy_select_country(country: Types.Country):
    
    $PlayerTurnStateMachine.send_event("IdleToDeploying")
    
-func __on_first_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
+func _on_first_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
    assert(index < self.__player_cards[self.__get_active_player()].size(), "Invalid index for player's card list!")
    assert(self.__player_cards[self.__get_active_player()][index] == card, "Card at index does not match card passed in!")
 
    if toggled_on:
-      self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY] = [index]
+      var selected_indices: Array[int] = [index]
+      self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY] = selected_indices
       $PlayerTurnStateMachine.send_event("IdleToPlayingCards")
    
 ## Deploy (Deploying) Subphase ######################################################################################### Deploy (Deploying) Subphase
@@ -430,7 +431,7 @@ func _on_deploy_troop_count_change_requested(old_troop_count: int, new_troop_cou
                                    new_troop_count, 
                                    REINFORCEMENTS_REMAINING)
                                  
-func __deploy_set_troop_count_and_confirm(troop_count: int):
+func __deploy_set_troop_count_and_confirm(troop_count: int) -> void:
    assert(self.__state_machine_metadata.has(self.__NUM_UNITS_KEY), "Deploy troop count not set previously!")
    
    self._on_deploy_troop_count_change_requested(self.__state_machine_metadata[self.__NUM_UNITS_KEY], troop_count)
@@ -445,7 +446,7 @@ func __deploy_set_troop_count_and_confirm(troop_count: int):
       self._on_deploy_confirm_requested()
       
 ## Deploy (Playing Cards) Subphase ##################################################################################### Deploy (Playing Cards) Subphase
-func _on_deploy_playing_cards_state_entered():
+func _on_deploy_playing_cards_state_entered() -> void:
    Logger.log_message(str(self.__get_active_player()) + 
                       " entered subphase: " + DeployTurnSubPhase.keys()[DeployTurnSubPhase.PLAYING_CARDS] + 
                       " of phase: " + 
@@ -454,13 +455,84 @@ func _on_deploy_playing_cards_state_entered():
    assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
    assert(self.__state_machine_metadata.has(self.__CARD_INDICES_SELECTED_KEY), "Territory card indices not set previously!")
    
-   # TODO: Remove
-   $PlayerTurnStateMachine.send_event("PlayingCardsToIdle")
-
-func _on_deploy_playing_cards_state_exited():
-   $GameBoardHUD.enable_player_hand(false)
-   pass # Replace with function body.
+   $GameBoardHUD.enable_next_phase_button(false)
    
+   if self.__is_local_player_turn():
+      $GameBoardHUD.connect("territory_card_toggled", self._on_deploy_playing_cards_territory_card_toggled)
+
+func _on_deploy_playing_cards_state_exited() -> void:
+   $GameBoardHUD.enable_player_hand(false)
+   $GameBoardHUD.enable_next_phase_button(true)
+   
+   if self.__is_local_player_turn():
+      $GameBoardHUD.disconnect("territory_card_toggled", self._on_deploy_playing_cards_territory_card_toggled)
+      
+func _on_deploy_playing_cards_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
+   var ACTIVE_PLAYER = self.__get_active_player()
+   
+   assert(self.__player_cards.has(ACTIVE_PLAYER) and self.__player_cards[ACTIVE_PLAYER].size() != 0, "Current player does not have any cards!")
+   assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
+   assert(self.__state_machine_metadata.has(self.__CARD_INDICES_SELECTED_KEY), "Territory card indices not set previously!")
+   
+   var INDEX_ALREADY_EXISTS = self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY].has(index)
+   
+   assert(INDEX_ALREADY_EXISTS != toggled_on, "Somehow a card was already known even though it was just toggled on or wasn't known and was toggled off")
+   
+   # Handle card removed from hand
+   if INDEX_ALREADY_EXISTS and !toggled_on:
+      self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY].erase(index)
+      
+      if self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY].size() <= 0:
+         self.__state_machine_metadata.erase(self.__CARD_INDICES_SELECTED_KEY)
+         $PlayerTurnStateMachine.send_event("PlayingCardsToIdle")
+         
+      return
+      
+   # Handle card added to hand
+   else:
+      self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY].append(index)
+      
+   # Sort selected indices for easier handling
+   var SELECTED_INDICES = self.__state_machine_metadata[self.__CARD_INDICES_SELECTED_KEY]
+   SELECTED_INDICES.sort()
+   
+   # See if this is a complete hand
+   if SELECTED_INDICES.size() == Constants.NUM_TERRITORY_CARDS_IN_PLAYABLE_HAND:
+      assert(self.__player_cards[ACTIVE_PLAYER].size() >= SELECTED_INDICES.size(), "Somehow there are less territory cards than selected card indices")
+      assert(self.__player_cards[ACTIVE_PLAYER].size() > SELECTED_INDICES[0], "Selected index 0 is out of bounds!")
+      assert(self.__player_cards[ACTIVE_PLAYER].size() > SELECTED_INDICES[1], "Selected index 0 is out of bounds!")
+      assert(self.__player_cards[ACTIVE_PLAYER].size() > SELECTED_INDICES[2], "Selected index 0 is out of bounds!")
+      
+      var hand_played = false
+      
+      # Is hand three of a kind?
+      if self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]] == self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] and \
+         self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] == self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[2]]:
+            hand_played = true
+            self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_all_of_a_kind(self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]])
+            
+      # Is hand one of each?
+      elif self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]] != self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] and \
+           self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] != self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[2]] and \
+           self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]] != self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[2]]: 
+            
+            self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_one_of_each()
+            
+            $GameBoardHUD.hide_deploy_reinforcements_remaining()
+            $GameBoardHUD.show_deploy_reinforcements_remaining(ACTIVE_PLAYER, self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
+            
+            hand_played = true
+         
+      # If hand was played, now remove all cards and leave playing cards phase   
+      if hand_played:
+         # Cards are sorted by indice, remove them in reverse order so that we do not have to do indice handling
+         self.__player_cards[ACTIVE_PLAYER].erase(SELECTED_INDICES[2])
+         self.__player_cards[ACTIVE_PLAYER].erase(SELECTED_INDICES[1])
+         self.__player_cards[ACTIVE_PLAYER].erase(SELECTED_INDICES[0])
+         
+         $GameBoardHUD.remove_cards_from_hand(SELECTED_INDICES)
+         $PlayerTurnStateMachine.send_event("PlayingCardsToIdle")
+         
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
    self.__active_turn_phase = TurnPhase.ATTACK
