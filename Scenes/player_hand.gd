@@ -11,6 +11,9 @@ class_name PlayerHand
 # TODO: Long Term
 #
 # TODO: Add card assets that aren't just playing cards
+# TODO: Once cards are unique to a deck, they will not be assigned an index at construction and the index will instead
+#       be determined dynamically by looking for the index based on a unique id that helps differentiate cards of the same
+#       type (infantry, cavalry, etc)
 # 
 ########################################################################################################################
 
@@ -41,6 +44,10 @@ func remove_cards(card_indices: Array[int]) -> void:
       node.disconnect("card_toggled", self._on_card_toggled)
       $HMarginContainer.remove_child(node)
       node.queue_free()
+      
+   # TODO: Remove - For now we manually update card indices
+   for i in $HMarginContainer.get_child_count():
+      $HMarginContainer.get_children()[i].index = i
       
 func toggle_card(index: int) -> void:
    assert(index < $HMarginContainer.get_child_count(), "Invalid card index provided")

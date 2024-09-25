@@ -12,3 +12,4 @@ res://Scenes/player_leaderboard_table_row.tscn
 res://Scenes/player_hand.tscn
 res://Scenes/territory_card.tscn
 res://Scenes/game_engine.gd
+res://Scenes/player_hand.gd

@@ -508,8 +508,9 @@ func _on_deploy_playing_cards_territory_card_toggled(index: int, card: Types.Car
       # Is hand three of a kind?
       if self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]] == self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] and \
          self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] == self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[2]]:
-            hand_played = true
+            
             self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_all_of_a_kind(self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]])
+            hand_played = true
             
       # Is hand one of each?
       elif self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]] != self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[1]] and \
@@ -517,18 +518,18 @@ func _on_deploy_playing_cards_territory_card_toggled(index: int, card: Types.Car
            self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[0]] != self.__player_cards[ACTIVE_PLAYER][SELECTED_INDICES[2]]: 
             
             self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_one_of_each()
-            
-            $GameBoardHUD.hide_deploy_reinforcements_remaining()
-            $GameBoardHUD.show_deploy_reinforcements_remaining(ACTIVE_PLAYER, self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
-            
             hand_played = true
          
       # If hand was played, now remove all cards and leave playing cards phase   
       if hand_played:
+         # Update reinforcements remaining label
+         $GameBoardHUD.hide_deploy_reinforcements_remaining()
+         $GameBoardHUD.show_deploy_reinforcements_remaining(ACTIVE_PLAYER, self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
+         
          # Cards are sorted by indice, remove them in reverse order so that we do not have to do indice handling
-         self.__player_cards[ACTIVE_PLAYER].erase(SELECTED_INDICES[2])
-         self.__player_cards[ACTIVE_PLAYER].erase(SELECTED_INDICES[1])
-         self.__player_cards[ACTIVE_PLAYER].erase(SELECTED_INDICES[0])
+         self.__player_cards[ACTIVE_PLAYER].remove_at(SELECTED_INDICES[2])
+         self.__player_cards[ACTIVE_PLAYER].remove_at(SELECTED_INDICES[1])
+         self.__player_cards[ACTIVE_PLAYER].remove_at(SELECTED_INDICES[0])
          
          $GameBoardHUD.remove_cards_from_hand(SELECTED_INDICES)
          $PlayerTurnStateMachine.send_event("PlayingCardsToIdle")
