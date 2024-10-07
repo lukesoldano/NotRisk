@@ -17,7 +17,7 @@ func _ready():
    
    $Label.text = self.country_label
 
-func set_deployment(deployment: Types.Deployment) -> void:
+func set_deployment(deployment: Types.DeploymentDeprecated) -> void:
    $OccupationWidget.set_color(deployment.player.army_color)
    $OccupationWidget.set_count(deployment.troop_count)
    

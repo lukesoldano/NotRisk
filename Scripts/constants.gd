@@ -1,7 +1,9 @@
 class_name Constants
 
-const MIN_NUM_PLAYERS:int = 2
-const MAX_NUM_PLAYERS:int = 6
+const INVALID_ID: int = -1
+
+const MIN_NUM_PLAYERS: int = 2
+const MAX_NUM_PLAYERS: int = 6
 
 const NUM_TERRITORY_CARDS_IN_PLAYABLE_HAND: int = 3
 const MAX_TERRITORY_CARDS_IN_HAND: int = 5

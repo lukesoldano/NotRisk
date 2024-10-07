@@ -11,9 +11,8 @@ class_name GameEngine
 # TODO: Rename next_phase_requested to be specific to player turn phase and all player turn state machine fns/vars that are named generally
 # TODO: Prevent next phase from showing while any popups are active
 # TODO: State machine/other solution for winning game or being knocked out
-# TODO: Playing cards subphase of reinforce
 # TODO: Give conquering player losers cards if loser knocked out of game
-# TODO: If upon conquering, player has 5+ cards, send them back to reinforce stage
+# TODO: If upon conquering, player has 5+ cards, send them back to deploy stage
 # TODO: Change name of __player_occupations member to something that doesn't clash with other definition of the term "occupation"
 # TODO: Potentially rework terminology and types of occupations/deployments overall as it is not as simple as it could be at first glance
 #
@@ -21,7 +20,6 @@ class_name GameEngine
 #
 # TODO: Make territory cards part of a greater deck with assigned countries and country bonuses instead of randomly selected J,Q,K
 # TODO: Have GameEngine be initialized elsewhere instead of being filled with a dummy player list
-# TODO: Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
 # TODO: Add other victory conditions
 # 
 ########################################################################################################################
@@ -467,7 +465,7 @@ func _on_deploy_playing_cards_state_exited() -> void:
    if self.__is_local_player_turn():
       $GameBoardHUD.disconnect("territory_card_toggled", self._on_deploy_playing_cards_territory_card_toggled)
       
-func _on_deploy_playing_cards_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
+func _on_deploy_playing_cards_territory_card_toggled(index: int, _card: Types.CardType, toggled_on: bool) -> void:
    var ACTIVE_PLAYER = self.__get_active_player()
    
    assert(self.__player_cards.has(ACTIVE_PLAYER) and self.__player_cards[ACTIVE_PLAYER].size() != 0, "Current player does not have any cards!")
@@ -1314,7 +1312,7 @@ func __generate_random_deployments() -> void:
             country = randi() % num_countries
          
          self.__player_occupations[player].append(country)
-         self.__deployments[country] = Types.Deployment.new(player, 1)
+         self.__deployments[country] = Types.DeploymentDeprecated.new(player, 1)
       
          num_countries_assigned += 1
          remaining_troop_count[player] -= 1

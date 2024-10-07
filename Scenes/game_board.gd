@@ -79,13 +79,16 @@ const CONTINENT_BONUSES: Dictionary = {
    Types.Country.YAKUTSK: $Continents/Asia/Yakutsk
 }
 
+var geography_manager: GameBoardGeographyManager = GameBoardGeographyManager.new()
+var state_manager: GameBoardStateManager = GameBoardStateManager.new()
+
 func _ready():
    self.__validate_borders()
    
    for node in self.__country_node_map:
       self.__country_node_map[node].connect("clicked", self._on_country_clicked)
       
-# Dictionary should be in format { country: Country, Deployment }
+# Dictionary should be in format { country: Country, DeploymentDeprecated }
 func populate(deployments: Dictionary) -> bool:
    for country in deployments:
       if not self.set_country_deployment(country, deployments[country]):
@@ -94,7 +97,7 @@ func populate(deployments: Dictionary) -> bool:
          
    return true
       
-func set_country_deployment(country: Types.Country, deployment: Types.Deployment) -> bool:
+func set_country_deployment(country: Types.Country, deployment: Types.DeploymentDeprecated) -> bool:
    if self.__country_node_map.has(country) != true:
       assert(false, "Invalid country")
       return false
