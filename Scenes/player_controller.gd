@@ -14,37 +14,35 @@ class_name PlayerController
 # 
 ########################################################################################################################
 
-var __player: Player = null
+var __player_id: int = Constants.INVALID_ID
 
-var __desired_deployments: Dictionary = {}
+# key: CountryId, value: TroopCount
+var __desired_deployments: Dictionary[int, int] = {}
 
 # TODO: Remove, temp logic
 const NUM_UNIQUE_ATTACKS_TO_MAKE = 3
 var current_num_unique_attacks_made = 0
 #
 
-func _init(player: Player) -> void:
-   self.__player = player
+func _init(player_id: int) -> void:
+   assert(player_id != Constants.INVALID_ID, "Invalid player id provided to player controller!")
+   self.__player_id = player_id
 
-func determine_desired_deployments(player_occupations: Dictionary, 
-                                   _deployments: Dictionary, 
-                                   num_reinforcements: int) -> void:
+func determine_desired_deployments(game_board_state_manager: GameBoardStateManager, num_reinforcements: int) -> void:
                                     
    Logger.log_message("AI: determine_deployments()")
    
-   assert(player_occupations.has(self.__player), "Player assigned to this player controller not present in player_occupations map!")
-   
-   var CURRENTLY_OCCUPIED_COUNTRIES: Array = player_occupations[self.__player]
+   var CURRENTLY_OCCUPIED_COUNTRIES: Array = game_board_state_manager.get_player_countries(self.__player_id)
    
    assert(!CURRENTLY_OCCUPIED_COUNTRIES.is_empty(), "Player assigned to this player controller doesn't own any countries!")
    
    # Randomly assign units to countries this player occupies
    for i in range(0, num_reinforcements):
-      var country = CURRENTLY_OCCUPIED_COUNTRIES[randi() % CURRENTLY_OCCUPIED_COUNTRIES.size()]
-      if __desired_deployments.has(country):
-         __desired_deployments[country] += 1
+      var country_id = CURRENTLY_OCCUPIED_COUNTRIES[randi() % CURRENTLY_OCCUPIED_COUNTRIES.size()]
+      if self.__desired_deployments.has(country_id):
+         self.__desired_deployments[country_id] += 1
       else:
-         __desired_deployments[country] = 1
+         self.__desired_deployments[country_id] = 1
 
 # Returns true if moves to be made, false if no further moves desired
 func handle_deploy_state_idle(select_deployment_country_callable: Callable) -> bool:
@@ -54,33 +52,29 @@ func handle_deploy_state_idle(select_deployment_country_callable: Callable) -> b
       return false
       
    # Deploy to the first entry in the list then return
-   for country in self.__desired_deployments:
-      select_deployment_country_callable.call_deferred(country)
+   for country_id in self.__desired_deployments:
+      select_deployment_country_callable.call_deferred(country_id)
       break
       
    return true
 
-func handle_deploy_state_deploying(select_deployment_count_callable: Callable, 
-                                   country: Types.Country) -> void:
+func handle_deploy_state_deploying(select_deployment_count_callable: Callable, country_id: int) -> void:
                                     
    Logger.log_message("AI: handle_deploy_state_deploying()")
    
-   assert(self.__desired_deployments.has(country), "Invalid deployment country provided to PlayerController")
+   assert(self.__desired_deployments.has(country_id), "Invalid deployment country_id provided to PlayerController")
    
-   select_deployment_count_callable.call_deferred(self.__desired_deployments[country])
-   self.__desired_deployments.erase(country)
+   select_deployment_count_callable.call_deferred(self.__desired_deployments[country_id])
+   self.__desired_deployments.erase(country_id)
 
 # Returns true if moves to be made, false if no further moves desired
 func handle_attack_state_idle(select_attack_source_country_callable: Callable,
                               get_countries_that_neighbor_callable: Callable, 
-                              player_occupations: Dictionary, 
-                              deployments: Dictionary) -> bool:
+                              game_board_state_manager: GameBoardStateManager) -> bool:
                                  
    Logger.log_message("AI: handle_attack_state_idle()")
    
-   assert(player_occupations.has(self.__player), "Player assigned to this player controller not present in player_occupations map!")
-   
-   var CURRENTLY_OCCUPIED_COUNTRIES: Array = player_occupations[self.__player]
+   var CURRENTLY_OCCUPIED_COUNTRIES: Array = game_board_state_manager.get_player_countries(self.__player_id)
    
    assert(!CURRENTLY_OCCUPIED_COUNTRIES.is_empty(), "Player assigned to this player controller doesn't own any countries!")
    
@@ -91,93 +85,82 @@ func handle_attack_state_idle(select_attack_source_country_callable: Callable,
    #
       
    # Select country to attack from, iterate through list until a valid country is found
-   var source_country = null
-   for country in CURRENTLY_OCCUPIED_COUNTRIES:
-      assert(deployments.has(country), "Occupied country does not exist in deployments map!")
-      
-      var COUNTRY_DEPLOYMENT = deployments[country]
+   var source_country_id = null
+   for country_id in CURRENTLY_OCCUPIED_COUNTRIES:
+      var COUNTRY_DEPLOYMENT: Types.Deployment = game_board_state_manager.get_deployment_for_country(country_id)
       if COUNTRY_DEPLOYMENT.troop_count > 1:
-         for neighboring_country in get_countries_that_neighbor_callable.call(country):
-            if !CURRENTLY_OCCUPIED_COUNTRIES.has(neighboring_country):
-               source_country = country
+         for neighboring_country_id in get_countries_that_neighbor_callable.call(country_id):
+            if !CURRENTLY_OCCUPIED_COUNTRIES.has(neighboring_country_id):
+               source_country_id = country_id
                break
                
-      if source_country != null:
+      if source_country_id != null:
          break
          
-   if source_country != null:
+   if source_country_id != null:
       self.current_num_unique_attacks_made += 1
-      select_attack_source_country_callable.call_deferred(source_country)
+      select_attack_source_country_callable.call_deferred(source_country_id)
       
-   return source_country != null
+   return source_country_id != null
    
 func handle_attack_state_source_selected(select_attack_destination_country_callable: Callable,
                                          get_countries_that_neighbor_callable: Callable, 
-                                         source_country: Types.Country,
-                                         player_occupations: Dictionary, 
-                                         deployments: Dictionary) -> void:
+                                         source_country_id: int,
+                                         game_board_state_manager: GameBoardStateManager) -> void:
                                  
    Logger.log_message("AI: handle_attack_state_source_selected()")
    
-   assert(player_occupations.has(self.__player), "Player assigned to this player controller not present in player_occupations map!")
-   
-   var CURRENTLY_OCCUPIED_COUNTRIES: Array = player_occupations[self.__player]
+   var CURRENTLY_OCCUPIED_COUNTRIES: Array = game_board_state_manager.get_player_countries(self.__player_id)
    
    assert(!CURRENTLY_OCCUPIED_COUNTRIES.is_empty(), "Player assigned to this player controller doesn't own any countries!")
-   assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country), "Player assigned to this player controller does not own the provided source_country!")
-   assert(deployments.has(source_country), "Deployments map does not contain source_country!")
-   assert(deployments[source_country].troop_count > 1, "source_country does not contain enough troops to attack with!")
+   assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country_id), "Player assigned to this player controller does not own the provided source_country!")
    
-   var destination_country = null
-   for neighboring_country in get_countries_that_neighbor_callable.call(source_country):
-      if !CURRENTLY_OCCUPIED_COUNTRIES.has(neighboring_country):
-         destination_country = neighboring_country
+   var destination_country_id = null
+   for neighboring_country_id in get_countries_that_neighbor_callable.call(source_country_id):
+      if !CURRENTLY_OCCUPIED_COUNTRIES.has(neighboring_country_id):
+         destination_country_id = neighboring_country_id
          break
          
-   assert(destination_country != null, "Could not find neighboring country to attack with given source_country!")
+   assert(destination_country_id != null, "Could not find neighboring country to attack with given source_country_id!")
    
-   select_attack_destination_country_callable.call_deferred(destination_country)
+   select_attack_destination_country_callable.call_deferred(destination_country_id)
    
 func handle_attack_state_destination_selected(set_die_count_and_roll_callable: Callable,
-                                              source_country: Types.Country,
-                                              destination_country: Types.Country,
-                                              player_occupations: Dictionary, 
-                                              deployments: Dictionary) -> void:
+                                              source_country_id: int,
+                                              destination_country_id: int,
+                                              game_board_state_manager: GameBoardStateManager) -> void:
                                  
    Logger.log_message("AI: handle_attack_state_destination_selected()")
    
-   assert(player_occupations.has(self.__player), "Player assigned to this player controller not present in player_occupations map!")
-   
-   var CURRENTLY_OCCUPIED_COUNTRIES: Array = player_occupations[self.__player]
+   var CURRENTLY_OCCUPIED_COUNTRIES: Array = game_board_state_manager.get_player_countries(self.__player_id)
    
    assert(!CURRENTLY_OCCUPIED_COUNTRIES.is_empty(), "Player assigned to this player controller doesn't own any countries!")
-   assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country), "Player assigned to this player controller does not own the provided source_country!")
-   assert(!CURRENTLY_OCCUPIED_COUNTRIES.has(destination_country), "Player assigned to this player controller already owns the provided destination_country!")
-   assert(deployments.has(source_country), "Deployments map does not contain source_country!")
-   assert(deployments[source_country].troop_count > 1, "source_country does not contain enough troops to attack with!")
-   assert(deployments.has(destination_country), "Deployments map does not contain destination_country!")
+   assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country_id), "Player assigned to this player controller does not own the provided source_country_id!")
+   assert(!CURRENTLY_OCCUPIED_COUNTRIES.has(destination_country_id), "Player assigned to this player controller already owns the provided destination_country_id!")
    
    # This is all temporary logic, but we are going to attack until we win or can't fight anymore
-   set_die_count_and_roll_callable.call_deferred(Utilities.get_max_attacker_die_count_for_troop_count(deployments[source_country].troop_count))
+   set_die_count_and_roll_callable.call_deferred(
+      Utilities.get_max_attacker_die_count_for_troop_count(
+         game_board_state_manager.get_deployment_for_country(source_country_id).troop_count
+      )
+   )
    
 func handle_attack_state_victory(set_troop_count_and_confirm_callable: Callable,
-                                 source_country: Types.Country,
-                                 _destination_country: Types.Country,
-                                 player_occupations: Dictionary, 
-                                 deployments: Dictionary) -> void:
+                                 source_country_id: int,
+                                 _destination_country_id: int,
+                                 game_board_state_manager: GameBoardStateManager) -> void:
                                     
    Logger.log_message("AI: handle_attack_state_victory()")
    
-   assert(player_occupations.has(self.__player), "Player assigned to this player controller not present in player_occupations map!")
-   
-   var CURRENTLY_OCCUPIED_COUNTRIES: Array = player_occupations[self.__player]
+   var CURRENTLY_OCCUPIED_COUNTRIES: Array = game_board_state_manager.get_player_countries(self.__player_id)
    
    assert(!CURRENTLY_OCCUPIED_COUNTRIES.is_empty(), "Player assigned to this player controller doesn't own any countries!")
-   assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country), "Player assigned to this player controller does not own the provided source_country!")
-   assert(deployments.has(source_country), "Deployments map does not contain source_country!")
+   assert(CURRENTLY_OCCUPIED_COUNTRIES.has(source_country_id), "Player assigned to this player controller does not own the provided source_country!")
    
    # This is all temporary logic, but we are going to move the max armies possible
-   set_troop_count_and_confirm_callable.call_deferred(deployments[source_country].troop_count - 1)
+   set_troop_count_and_confirm_callable.call_deferred(
+      game_board_state_manager.get_deployment_for_country(source_country_id).troop_count - 1
+   )
 
 # Returns true if moves to be made, false if no further moves desired
 func handle_reinforce_state_idle() -> bool:

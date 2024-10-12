@@ -9,14 +9,14 @@ class_name GameBoard
 #
 # TODO: Long Term
 #
-# TODO: Make country type agnostic such that only GameBoard is aware (not an enum- maybe a string instead, figure out later), allows for different GameBoards/maps
-# TODO: Otherwise make country type stem from gameboard so that it's not defined in Types
+# TODO: Implement game board geography manager
 # 
 ########################################################################################################################
 
+# TODO: Change this to use int for country_id instead of enum
 signal country_clicked(country: Types.Country, action_tag: String)
 
-const CONTINENTS: Dictionary = {
+const CONTINENTS: Dictionary[Types.Continent, Array] = {
    Types.Continent.AFRICA: [Types.Country.CONGO, Types.Country.EAST_AFRICA, Types.Country.EGYPT, Types.Country.MADAGASCAR, Types.Country.NORTH_AFRICA, Types.Country.SOUTH_AFRICA],
    Types.Continent.ASIA: [Types.Country.AFGHANISTAN, Types.Country.CHINA, Types.Country.INDIA, Types.Country.IRKUTSK, Types.Country.JAPAN, Types.Country.KAMCHATKA, Types.Country.MIDDLE_EAST, Types.Country.MONGOLIA, Types.Country.SIAM, Types.Country.SIBERIA, Types.Country.URAL, Types.Country.YAKUTSK],
    Types.Continent.AUSTRALIA: [Types.Country.EASTERN_AUSTRALIA, Types.Country.INDONESIA, Types.Country.NEW_GUINEA, Types.Country.WESTERN_AUSTRALIA],
@@ -25,7 +25,7 @@ const CONTINENTS: Dictionary = {
    Types.Continent.SOUTH_AMERICA: [Types.Country.ARGENTINA, Types.Country.BRAZIL, Types.Country.PERU, Types.Country.VENEZUELA]
 }
 
-const CONTINENT_BONUSES: Dictionary = {
+const CONTINENT_BONUSES: Dictionary[Types.Continent, int] = {
    Types.Continent.AFRICA: 3,
    Types.Continent.ASIA: 7,
    Types.Continent.AUSTRALIA: 2,
@@ -34,7 +34,7 @@ const CONTINENT_BONUSES: Dictionary = {
    Types.Continent.SOUTH_AMERICA: 2
 }
 
-@onready var __country_node_map: Dictionary = { 
+@onready var __country_node_map: Dictionary[Types.Country, Country] = { 
    Types.Country.AFGHANISTAN: $Continents/Asia/Afghanistan,
    Types.Country.ALASKA: $Continents/NorthAmerica/Alaska,
    Types.Country.ALBERTA: $Continents/NorthAmerica/Alberta,
@@ -79,6 +79,7 @@ const CONTINENT_BONUSES: Dictionary = {
    Types.Country.YAKUTSK: $Continents/Asia/Yakutsk
 }
 
+# TODO: Move above logic into GeographyManager
 var geography_manager: GameBoardGeographyManager = GameBoardGeographyManager.new()
 var state_manager: GameBoardStateManager = GameBoardStateManager.new()
 
@@ -88,104 +89,81 @@ func _ready():
    for node in self.__country_node_map:
       self.__country_node_map[node].connect("clicked", self._on_country_clicked)
       
-# Dictionary should be in format { country: Country, DeploymentDeprecated }
-func populate(deployments: Dictionary) -> bool:
-   for country in deployments:
-      if not self.set_country_deployment(country, deployments[country]):
-         assert(false, "Failed to populate country during initialization")
-         return false
-         
-   return true
+   state_manager.connect("country_occupation_update", self._on_country_occupation_updated)
       
-func set_country_deployment(country: Types.Country, deployment: Types.DeploymentDeprecated) -> bool:
-   if self.__country_node_map.has(country) != true:
-      assert(false, "Invalid country")
-      return false
-
-   self.__country_node_map[country].set_deployment(deployment)
-   return true
+func _on_country_occupation_updated(country_id: int, old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
+   assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::_on_country_occupation_updated()")
+   self.__country_node_map[country_id].set_deployment(new_deployment)
    
-func get_countries_that_neighbor(country: Types.Country) -> Array:
-   assert(self.__country_node_map.has(country), "Invalid country")
-   return self.__country_node_map[country].neighbors
+func get_countries_that_neighbor(country_id: int) -> Array:
+   assert(self.__country_node_map.has(country_id), "Invalid country")
+   return self.__country_node_map[country_id].neighbors
    
-func countries_are_neighbors(country1: Types.Country, country2: Types.Country) -> bool:
-   if self.__country_node_map.has(country1) != true or self.__country_node_map.has(country2) != true:
-      assert(self.__country_node_map.has(country1), "Invalid country1")
-      assert(self.__country_node_map.has(country2), "Invalid country2")
+func countries_are_neighbors(country_id1: int, country_id2: int) -> bool:
+   if self.__country_node_map.has(country_id1) != true or self.__country_node_map.has(country_id2) != true:
+      assert(self.__country_node_map.has(country_id1), "Invalid country_id1")
+      assert(self.__country_node_map.has(country_id2), "Invalid country_id2")
       return false
       
-   return self.__country_node_map[country1].is_neighboring(country2)
+   return self.__country_node_map[country_id1].is_neighboring(country_id2)
    
 # Perform a breadth first search to find if the destination country is connected to the source country via player occupations
-func countries_connected_via_player_occupations(player: Player, 
-                                                occupations: Dictionary, 
-                                                source_country: Types.Country, 
-                                                destination_country: Types.Country) -> bool:
-   if source_country == destination_country:
+func countries_connected_via_player_occupations(player_id: int, source_country_id: int, destination_country_id: int) -> bool:
+   if source_country_id == destination_country_id:
       return true
       
-   assert(occupations.has(source_country), "Occupations map does not contain source country!")
-   assert(occupations.has(destination_country), "Occupations map does not contain destination country!")
+   assert(self.__country_node_map.has(source_country_id), "Country node map does not contain source country!")
+   assert(self.__country_node_map.has(destination_country_id), "Country node map does not contain destination country!")
    
-   assert(self.__country_node_map.has(source_country), "Country node map does not contain source country!")
-   assert(self.__country_node_map.has(destination_country), "Country node map does not contain destination country!")
-   
-   var SOURCE_OCCUPATION = occupations[source_country]
-   var DESTINATION_OCCUPATION = occupations[destination_country]
-   
-   if SOURCE_OCCUPATION.player != player:
+   if !state_manager.player_occupies_country(player_id, source_country_id):
       return false
       
-   if DESTINATION_OCCUPATION.player != player:
+   if !state_manager.player_occupies_country(player_id, destination_country_id):
       return false
       
-   var countries_to_check: Array[Types.Country] = [source_country]
-   var countries_already_checked: Array[Types.Country] = []
+   var countries_to_check: Array[int] = [source_country_id]
+   var countries_already_checked: Array[int] = []
    
-   return self.__dfs_country_connection_via_player_occupations(player, occupations, destination_country, countries_to_check, countries_already_checked)
+   return self.__dfs_country_connection_via_player_occupations(player_id, destination_country_id, countries_to_check, countries_already_checked)
    
 # Recursively uses self to search for a connection to destination_country owned by neighboring player occupations
 # Assumes that player does in fact own the destination country, returns true if path found; false o/w
-func __dfs_country_connection_via_player_occupations(player: Player, 
-                                                     occupations: Dictionary, 
-                                                     destination_country: Types.Country,
-                                                     countries_to_check: Array[Types.Country],
-                                                     countries_already_checked: Array[Types.Country]) -> bool:
+func __dfs_country_connection_via_player_occupations(player_id: int, 
+                                                     destination_country_id: int,
+                                                     countries_to_check: Array[int],
+                                                     countries_already_checked: Array[int]) -> bool:
                                
    # Find first, yet to check country that is occupied by player
    var player_occupied_country_found: bool = false
-   var unchecked_country: Types.Country        
+   var unchecked_country_id: int        
                
    while !countries_to_check.is_empty():                                           
-      unchecked_country = countries_to_check.pop_front()
+      unchecked_country_id = countries_to_check.pop_front()
       
-      if !countries_already_checked.has(unchecked_country):
-         assert(occupations.has(unchecked_country), "Country to check does not exist in occupations map")
-         assert(self.__country_node_map.has(unchecked_country), "Country to check does not exist in node map")
+      if !countries_already_checked.has(unchecked_country_id):
+         assert(self.__country_node_map.has(unchecked_country_id), "Country to check does not exist in node map")
          
-         countries_already_checked.append(unchecked_country)
+         countries_already_checked.append(unchecked_country_id)
          
-         if occupations[unchecked_country].player == player:
+         if state_manager.player_occupies_country(player_id, unchecked_country_id):
             player_occupied_country_found = true
             break
          
    if !player_occupied_country_found:
       return false
                                                    
-   for neighbor in self.__country_node_map[unchecked_country].neighbors:
-      if neighbor == destination_country:
+   for neighbor_id in self.__country_node_map[unchecked_country_id].neighbors:
+      if neighbor_id == destination_country_id:
          return true
          
-      assert(occupations.has(neighbor), "Occupations map does not contain neighbor country!")
-      assert(self.__country_node_map.has(neighbor), "Country node map does not contain neighbor country!")
+      assert(self.__country_node_map.has(neighbor_id), "Country node map does not contain neighbor country!")
          
-      if occupations[neighbor].player == player:
-         countries_to_check.append(neighbor)
-      elif !countries_already_checked.has(neighbor):
-         countries_already_checked.append(neighbor)
+      if state_manager.player_occupies_country(player_id, neighbor_id):
+         countries_to_check.append(neighbor_id)
+      elif !countries_already_checked.has(neighbor_id):
+         countries_already_checked.append(neighbor_id)
    
-   return self.__dfs_country_connection_via_player_occupations(player, occupations, destination_country, countries_to_check, countries_already_checked)
+   return self.__dfs_country_connection_via_player_occupations(player_id, destination_country_id, countries_to_check, countries_already_checked)
 
 func __validate_borders(): 
    for country in self.__country_node_map:

@@ -70,22 +70,9 @@ class Deployment:
    func _init(i_player_id: int, i_troop_count: int):
       self.player_id = i_player_id
       self.troop_count = i_troop_count
-
-class DeploymentDeprecated:
-   var player: Player = null
-   var troop_count: int = 0
-   
-   func _init(i_player: Player, i_troop_count: int):
-      self.player = i_player
-      self.troop_count = i_troop_count
       
-class Occupation:
-   var country: Types.Country
-   var deployment: Types.DeploymentDeprecated
-   
-   func _init(i_country: Types.Country, i_deployment: Types.DeploymentDeprecated):
-      self.country = i_country
-      self.deployment = i_deployment
+   func duplicate() -> Deployment:
+      return Deployment.new(player_id, troop_count)
       
 class StartAndForgetTimer extends Node:
    var __timer := Timer.new()

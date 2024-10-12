@@ -1,3 +1,4 @@
+res://Scripts
 res://Assets/kenney_boardgame-pack/PNG/Cards
 res://Assets/kenney_boardgame-pack/PNG/Pieces (White)
 res://Assets/kenney_boardgame-pack/PNG/Pieces (Blue)
@@ -5,5 +6,4 @@ res://addons
 res://Assets/kenney_onscreen-controls/Sprites/shaded-dark
 res://Resources
 res://Assets/kenney_boardgame-pack/Spritesheets
-res://Scripts
 res://Scenes

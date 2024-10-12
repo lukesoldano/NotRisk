@@ -68,45 +68,25 @@ func _on_next_phase_button_pressed() -> void:
    Logger.log_message("LocalPlayer: Next phase requested")
    self.next_phase_requested.emit()
    
-func _on_turn_phase_updated(player: Player, phase: GameEngine.TurnPhase) -> void:
-   $PhaseInfoLabel.text = "Player: " + player.user_name + " - Phase: " + GameEngine.TurnPhase.keys()[phase]
+func _on_turn_phase_updated(phase: GameEngine.TurnPhase) -> void:
+   $PhaseInfoLabel.text = "Player: " + PlayerManager.get_active_player().user_name + " - Phase: " + GameEngine.TurnPhase.keys()[phase]
    
 ## Player Leaderboard Table ############################################################################################
-func initialize_player_leaderboard_table(players: Array[Player], deployments: Dictionary) -> void:
-   const COLOR_INDEX = 0
-   const NUM_COUNTRIES_INDEX = 1
-   const NUM_ARMIES_INDEX = 2
-   const NUM_REINFORCEMENTS_INDEX = 3
-   const NUM_CARDS_INDEX = 4
-   
-   var table_rows: Array = []
-   
-   var current_index := 0
-   var player_indices: Dictionary = {}
-   for player in players:
-      player_indices[player] = current_index
-      table_rows.append([player.army_color, 0, 0, 0, 0])
-      current_index += 1
-      
-   for deployment in deployments:
-      current_index = player_indices[deployments[deployment].player]
-      table_rows[current_index][NUM_COUNTRIES_INDEX] += 1
-      table_rows[current_index][NUM_ARMIES_INDEX] += deployments[deployment].troop_count
-      
-   for table_row in table_rows:
-      $PlayerLeaderboardTable.add_entry(table_row[COLOR_INDEX], 
-                                        table_row[NUM_COUNTRIES_INDEX], 
-                                        table_row[NUM_ARMIES_INDEX], 
-                                        table_row[NUM_REINFORCEMENTS_INDEX],
-                                        table_row[NUM_CARDS_INDEX])
+func initialize_player_leaderboard_table(game_board_state_manager: GameBoardStateManager) -> void:
+   for player_id in PlayerManager.get_all_player_ids():
+      $PlayerLeaderboardTable.add_entry(PlayerManager.get_player_for_id(player_id).army_color, 
+                                        game_board_state_manager.get_player_countries(player_id).size(), 
+                                        game_board_state_manager.get_player_troop_count(player_id), 
+                                        0,
+                                        0)
    
 ## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
 func is_deploy_reinforcements_remaining_showing() -> bool:
    return $DeployReinforcementsRemainingCanvasLayer.visible
    
-func show_deploy_reinforcements_remaining(player: Player, reinforcements_remaining: int) -> void:
+func show_deploy_reinforcements_remaining(reinforcements_remaining: int) -> void:
    $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.text = str(reinforcements_remaining)
-   $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.label_settings.font_color = player.army_color
+   $DeployReinforcementsRemainingCanvasLayer/ReinforcementsRemainingCountLabel.label_settings.font_color = PlayerManager.get_active_player().army_color
    
    $DeployReinforcementsRemainingCanvasLayer.visible = true
    
@@ -120,18 +100,20 @@ func hide_deploy_reinforcements_remaining() -> void:
 func is_deploy_popup_showing() -> bool:
    return $DeployPopupCanvasLayer.visible
    
-func show_deploy_popup(is_local_player: bool, player: Player, deploy_country: Types.Country, troops_to_deploy: int, max_deployable_troops: int) -> void:
+func show_deploy_popup(deploy_country: Types.Country, troops_to_deploy: int, max_deployable_troops: int) -> void:
+   var PLAYER = PlayerManager.get_active_player()
+   
    $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.text = Types.Country.keys()[deploy_country]
-   $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.label_settings.font_color = player.army_color
+   $DeployPopupCanvasLayer/DeployArmiesToCountryLabel.label_settings.font_color = PLAYER.army_color
    
    $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.text = str(troops_to_deploy)
-   $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.label_settings.font_color = player.army_color
+   $DeployPopupCanvasLayer/ArmiesToDeployCountLabel.label_settings.font_color = PLAYER.army_color
    
    $DeployPopupCanvasLayer/ReduceTroopsButton.disabled = troops_to_deploy == 1
    $DeployPopupCanvasLayer/IncreaseTroopsButton.disabled = troops_to_deploy == max_deployable_troops
    
    $DeployPopupCanvasLayer.visible = true
-   self.show_deploy_popup_user_inputs(is_local_player)
+   self.show_deploy_popup_user_inputs(PlayerManager.is_local_player_active())
 
 func hide_deploy_popup() -> void:
    $DeployPopupCanvasLayer.visible = false
@@ -170,26 +152,29 @@ func _on_deploy_confirm_button_pressed() -> void:
 func is_attack_popup_showing() -> bool:
    return $AttackPopupCanvasLayer.visible
    
-func show_attack_popup(is_local_player_attacking: bool, 
-                       attacker: Types.Occupation, 
-                       defender: Types.Occupation, 
+func show_attack_popup(game_board_state_manager: GameBoardStateManager, 
+                       attacking_country_id: int, 
+                       defending_country_id: int, 
                        attacker_num_dice: int, 
                        max_attacker_num_dice: int,
                        defender_num_dice: int) -> void:
                         
-   var ATTACKER_COLOR = attacker.deployment.player.army_color
-   var DEFENDER_COLOR = defender.deployment.player.army_color
+   var ATTACKING_DEPLOYMENT: Types.Deployment = game_board_state_manager.get_deployment_for_country(attacking_country_id)
+   var DEFENDING_DEPLOYMENT: Types.Deployment = game_board_state_manager.get_deployment_for_country(defending_country_id)
+                        
+   var ATTACKER_COLOR = PlayerManager.get_player_for_id(ATTACKING_DEPLOYMENT.player_id).army_color
+   var DEFENDER_COLOR = PlayerManager.get_player_for_id(DEFENDING_DEPLOYMENT.player_id).army_color
    
-   $AttackPopupCanvasLayer/AttackSourceCountryLabel.text = Types.Country.keys()[attacker.country]
+   $AttackPopupCanvasLayer/AttackSourceCountryLabel.text = Types.Country.keys()[attacking_country_id]
    $AttackPopupCanvasLayer/AttackSourceCountryLabel.label_settings.font_color = ATTACKER_COLOR
    
-   $AttackPopupCanvasLayer/AttackDestinationCountryLabel.text = Types.Country.keys()[defender.country]
+   $AttackPopupCanvasLayer/AttackDestinationCountryLabel.text = Types.Country.keys()[defending_country_id]
    $AttackPopupCanvasLayer/AttackDestinationCountryLabel.label_settings.font_color = DEFENDER_COLOR
    
-   $AttackPopupCanvasLayer/AttackingArmiesCountLabel.text = str(attacker.deployment.troop_count)
+   $AttackPopupCanvasLayer/AttackingArmiesCountLabel.text = str(ATTACKING_DEPLOYMENT.troop_count)
    $AttackPopupCanvasLayer/AttackingArmiesCountLabel.label_settings.font_color = ATTACKER_COLOR
    
-   $AttackPopupCanvasLayer/DefendingArmiesCountLabel.text = str(defender.deployment.troop_count)
+   $AttackPopupCanvasLayer/DefendingArmiesCountLabel.text = str(DEFENDING_DEPLOYMENT.troop_count)
    $AttackPopupCanvasLayer/DefendingArmiesCountLabel.label_settings.font_color = DEFENDER_COLOR
    
    self.update_attack_die_count(attacker_num_dice, max_attacker_num_dice)
@@ -199,7 +184,7 @@ func show_attack_popup(is_local_player_attacking: bool,
    $AttackPopupCanvasLayer/DefenderNumDiceCountLabel.label_settings.font_color = DEFENDER_COLOR
    
    $AttackPopupCanvasLayer.visible = true
-   self.show_troop_movement_user_inputs(is_local_player_attacking)
+   self.show_troop_movement_user_inputs(PlayerManager.is_local_player_active())
    
 func hide_attack_popup() -> void:
    $AttackPopupCanvasLayer.visible = false
@@ -300,10 +285,10 @@ func _on_increase_attack_die_button_pressed() -> void:
 func is_troop_movement_popup_showing() -> bool:
    return $TroopMovementPopupCanvasLayer.visible
    
-func show_troop_movement_popup(is_local_player: bool, 
+func show_troop_movement_popup(game_board_state_manager: GameBoardStateManager, 
                                movement_type: GameEngine.TroopMovementType,
-                               src_occupation: Types.Occupation, 
-                               dest_country: Types.Country, 
+                               src_country_id: int, 
+                               dest_country_id: int, 
                                troops_to_move: int,
                                min_troops_moveable: int,
                                max_troops_moveable: int) -> void:
@@ -317,20 +302,22 @@ func show_troop_movement_popup(is_local_player: bool,
          assert(false, "Invalid movement type provided!")
          return
                            
-   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.text = Types.Country.keys()[src_occupation.country]
-   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.label_settings.font_color = src_occupation.deployment.player.army_color
+   var army_color: Color = PlayerManager.get_active_player().army_color
+                           
+   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.text = Types.Country.keys()[src_country_id]
+   $TroopMovementPopupCanvasLayer/MoveFromCountryLabel.label_settings.font_color = army_color
    
-   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.text = Types.Country.keys()[dest_country]
-   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.label_settings.font_color = src_occupation.deployment.player.army_color
+   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.text = Types.Country.keys()[dest_country_id]
+   $TroopMovementPopupCanvasLayer/MoveToCountryLabel.label_settings.font_color = army_color
    
    $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.text = str(troops_to_move)
-   $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.label_settings.font_color = src_occupation.deployment.player.army_color
+   $TroopMovementPopupCanvasLayer/ArmiesToMoveCountLabel.label_settings.font_color = army_color
    
    $TroopMovementPopupCanvasLayer/ReduceTroopsButton.disabled = troops_to_move == min_troops_moveable
    $TroopMovementPopupCanvasLayer/IncreaseTroopsButton.disabled = troops_to_move == max_troops_moveable
    
    $TroopMovementPopupCanvasLayer.visible = true
-   self.show_troop_movement_popup_user_inputs(is_local_player)
+   self.show_troop_movement_popup_user_inputs(PlayerManager.is_local_player_active())
 
 func hide_troop_movement_popup() -> void:
    $TroopMovementPopupCanvasLayer.visible = false

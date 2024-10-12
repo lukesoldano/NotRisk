@@ -17,8 +17,8 @@ func _ready():
    
    $Label.text = self.country_label
 
-func set_deployment(deployment: Types.DeploymentDeprecated) -> void:
-   $OccupationWidget.set_color(deployment.player.army_color)
+func set_deployment(deployment: Types.Deployment) -> void:   
+   $OccupationWidget.set_color(PlayerManager.get_player_for_id(deployment.player_id).army_color)
    $OccupationWidget.set_count(deployment.troop_count)
    
 func is_neighboring(i_country: Types.Country) -> bool:

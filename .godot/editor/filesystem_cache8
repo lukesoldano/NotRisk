@@ -1143,7 +1143,7 @@ game_engine.gd::GDScript::-1::0::0::1::::GameEngine<>Node<>res://Assets/NodeIcon
 game_engine.tscn::PackedScene::7033701102448546790::0::0::1::::<><>::res://Scenes/game_engine.gd<>uid://fim7aocqhl1u::::res://Scenes/game_board.tscn<>res://addons/godot_state_charts/state_chart.gd<>res://addons/godot_state_charts/compound_state.gd<>uid://cf7w6o55pepoh::::res://Scenes/game_board_hud.tscn<>res://addons/godot_state_charts/atomic_state.gd<>res://addons/godot_state_charts/transition.gd<>res://addons/godot_state_charts/state_is_active_guard.gd
 occupation_widget.gd::GDScript::-1::0::0::1::::OccupationWidget<>Node2D<>res://Assets/NodeIcons/OccupationWidget.svg::
 occupation_widget.tscn::PackedScene::3691280183654952637::0::0::1::::<><>::res://Scenes/occupation_widget.gd
-player.gd::GDScript::-1::0::0::1::::Player<>Node2D<>::
+player.gd::GDScript::-1::0::0::1::::Player<>Object<>::
 player.tscn::PackedScene::4037873294914586880::0::0::1::::<><>::res://Scenes/player.gd
 player_controller.gd::GDScript::-1::0::0::1::::PlayerController<>Node2D<>::
 player_controller.tscn::PackedScene::5656830179259894126::0::0::1::::<><>::res://Scenes/player_controller.gd
@@ -1156,9 +1156,12 @@ player_leaderboard_table_row.tscn::PackedScene::2789977239587639187::0::0::1::::
 territory_card.gd::GDScript::-1::0::0::1::::TerritoryCard<>TextureButton<>::
 territory_card.tscn::PackedScene::5486733760479246184::0::0::1::::<><>::res://Scenes/territory_card.gd
 ::res://Scripts/::0
+config.gd::GDScript::-1::0::0::1::::<>Node<>::
 constants.gd::GDScript::-1::0::0::1::::Constants<>RefCounted<>::
-game_board_state_manager.gd::GDScript::-1::0::0::1::::<>Object<>::
+game_board_geography_manager.gd::GDScript::-1::0::0::1::::GameBoardGeographyManager<>Object<>::
+game_board_state_manager.gd::GDScript::-1::0::0::1::::GameBoardStateManager<>Object<>::
 logger.gd::GDScript::-1::0::0::1::::<>Node<>::
+player_manager.gd::GDScript::-1::0::0::1::::<>Node<>::
 types.gd::GDScript::-1::0::0::1::::Types<>RefCounted<>::
 user_input.gd::GDScript::-1::0::0::1::::UserInput<>Node<>::
 utilities.gd::GDScript::-1::0::0::1::::Utilities<>Node<>::
