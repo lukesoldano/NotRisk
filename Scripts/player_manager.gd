@@ -9,16 +9,16 @@ var __local_player_id: int = 0
 var __active_player_id: int = 0
 
 # The ids of all players in the turn order they will play in
-var __player_ids: Array[int] = [0, 1, 2]
+var __player_ids: Array[int] = [0, 1, 2, 3, 4, 5]
 
 # key: PlayerId, value: PLayer
 var __players: Dictionary[int, Player] = {
    0 : Player.new(0, Player.PlayerType.HUMAN, "Luke", Constants.SUPPORTED_ARMY_COLORS[5]),
    1 : Player.new(1, Player.PlayerType.AI, "Ben", Constants.SUPPORTED_ARMY_COLORS[0]),
    2 : Player.new(2, Player.PlayerType.AI, "Sam", Constants.SUPPORTED_ARMY_COLORS[1]),
-   #3 : Player.new(3, Player.PlayerType.AI, "Dennis", Constants.SUPPORTED_ARMY_COLORS[2]),
-   #4 : Player.new(4, Player.PlayerType.AI, "Austin", Constants.SUPPORTED_ARMY_COLORS[3]),
-   #5 : Player.new(5, Player.PlayerType.AI, "Mike", Constants.SUPPORTED_ARMY_COLORS[4])
+   3 : Player.new(3, Player.PlayerType.AI, "Dennis", Constants.SUPPORTED_ARMY_COLORS[2]),
+   4 : Player.new(4, Player.PlayerType.AI, "Austin", Constants.SUPPORTED_ARMY_COLORS[3]),
+   5 : Player.new(5, Player.PlayerType.AI, "Mike", Constants.SUPPORTED_ARMY_COLORS[4])
 }
 
 ########################################################################################################################
@@ -70,6 +70,20 @@ func get_player_for_id(player_id: int) -> Player:
    assert(self.__players.has(player_id), "Unknown player_id provided to PlayerManager::get_player_for_id")
    
    return self.__players[player_id]
+   
+func get_player_turn_position(i_player_id: int) -> int:
+   assert(i_player_id != Constants.INVALID_ID, "Invalid i_player_id passed to PlayerManager::get_player_turn_position")
+   assert(self.__player_ids.has(i_player_id), "Unknown i_player_id provided to PlayerManager::get_player_turn_position")
+   assert(self.__players.has(i_player_id), "Unknown i_player_id provided to PlayerManager::get_player_turn_position")
+   
+   var x = 0
+   for player_id in self.__player_ids:
+      if player_id == i_player_id:
+         return x
+      x += 1
+      
+   assert(false, "This should never happen! PlayerManager::get_player_turn_position")
+   return -1
 
 func is_player_with_id_knocked_out(player_id: int) -> bool:
    assert(player_id != Constants.INVALID_ID, "Invalid player_id passed to PlayerManager::is_player_with_id_knocked_out")

@@ -870,7 +870,7 @@ func _on_attack_victory_troop_movement_confirm_requested() -> void:
    
    self.__attack_victory_move_conquering_armies()
    
-   if $GameBoard.state_manager.occupied_country_count_for_player(DEFENDING_PLAYER) <= 0:
+   if $GameBoard.state_manager.get_player_num_countries(DEFENDING_PLAYER) <= 0:
       self.__state_machine_metadata[self.__KNOCKED_OUT_PLAYER] = DEFENDING_PLAYER
       $PlayerTurnStateMachine.send_event("VictoryToOpponentKnockedOut")
    else:
@@ -1145,7 +1145,7 @@ func _on_end_state_exited() -> void:
    var current_player_id = PlayerManager.get_active_player_id()
    var next_player_id = PlayerManager.progress_active_player_to_next_player()
    
-   while $GameBoard.state_manager.occupied_country_count_for_player(next_player_id) == 0:
+   while $GameBoard.state_manager.get_player_num_countries(next_player_id) == 0:
       next_player_id = PlayerManager.progress_active_player_to_next_player()
       assert(next_player_id != current_player_id, 
              "Could not find another player remaining except for current player: " + str(PlayerManager.get_active_player()))

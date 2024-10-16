@@ -2,9 +2,9 @@ res://Scenes/game_board_hud.tscn
 res://Resources/attack_dice.tres
 res://Resources/defense_dice.tres
 res://Scenes/game_board.tscn
+res://Scenes/game_board_hud.gd
+res://Scripts/player_manager.gd
+res://Scenes/game_engine.tscn
 res://Scripts/game_board_state_manager.gd
 res://Scenes/game_engine.gd
-res://Scenes/player_controller.gd
-res://Scenes/game_board.gd
-res://addons/godot_state_charts/compound_state.gd
-res://Scripts/player_manager.gd
+res://Scenes/player_leaderboard_table_row.gd

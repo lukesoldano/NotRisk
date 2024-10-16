@@ -167,9 +167,9 @@ func num_players_with_nonzero_countries() -> int:
       count += (1 if self.__player_countries[player_id].size() > 0 else 0)
    return count
    
-func occupied_country_count_for_player(player_id: int) -> int:
-   assert(player_id != Constants.INVALID_ID, "Invalid player id provided to GameBoardStateManager::occupied_country_count_for_player()")
-   assert(self.__player_countries.has(player_id), "Unknown player id provided to GameBoardStateManager::occupied_country_count_for_player()")
+func get_player_num_countries(player_id: int) -> int:
+   assert(player_id != Constants.INVALID_ID, "Invalid player id provided to GameBoardStateManager::get_player_num_countries()")
+   assert(self.__player_countries.has(player_id), "Unknown player id provided to GameBoardStateManager::get_player_num_countries()")
    
    return self.__player_countries[player_id].size()
    

@@ -2,6 +2,8 @@ extends HBoxContainer
 
 class_name PlayerLeaderboardTableRow
 
+const __COLUMN_SPACING: int = 4
+
 @export var player_color: Color = Color.WHITE
 @export var num_countries: int = 999
 @export var num_armies: int = 999
@@ -36,10 +38,7 @@ func set_values(i_player_color: Color, i_num_countries: int, i_num_armies: int, 
    
    $PlayerTextureRect.texture = ImageTexture.create_from_image(image)
          
-   $NumCountriesLabel.text = str(self.num_countries)
-   $NumArmiesLabel.text = str(self.num_armies)
-   $NumReinforcementsLabel.text = str(self.num_reinforcements)
-   $NumCardsLabel.text = str(self.num_cards)
+   self.__update_table_values()
          
 func update_values(i_num_countries: int, i_num_armies: int, i_num_reinforcements: int, i_num_cards: int) -> void:
    self.num_countries = i_num_countries
@@ -47,7 +46,25 @@ func update_values(i_num_countries: int, i_num_armies: int, i_num_reinforcements
    self.num_reinforcements = i_num_reinforcements
    self.num_cards = i_num_cards
    
-   $NumCountriesLabel.text = str(self.num_countries)
-   $NumArmiesLabel.text = str(self.num_armies)
-   $NumReinforcementsLabel.text = str(self.num_reinforcements)
-   $NumCardsLabel.text = str(self.num_cards)
+   self.__update_table_values()
+   
+func __update_table_values() -> void:
+   $NumCountriesLabel.text = self.__format_string_to_length(str(self.num_countries), self.__COLUMN_SPACING)
+   $NumArmiesLabel.text = self.__format_string_to_length(str(self.num_armies), self.__COLUMN_SPACING)
+   $NumReinforcementsLabel.text = self.__format_string_to_length(str(self.num_reinforcements), self.__COLUMN_SPACING)
+   $NumCardsLabel.text = self.__format_string_to_length(str(self.num_cards), self.__COLUMN_SPACING)
+   
+func __format_string_to_length(str: String, length: int) -> String:
+   assert(length > 0, "Invalid length provided to PlayerLeaderBoardTableRow::__format_string_to_length")
+   assert(str.length() <= length, "Provided length is less than size of string in PlayerLeaderBoardTableRow::__format_string_to_length")
+   
+   var prependSpace: bool = true
+   while str.length() < length:
+      if prependSpace:
+         str = " " + str
+      else:
+         str = str + " "
+         
+      prependSpace = !prependSpace
+
+   return str

@@ -38,6 +38,8 @@ const __DEFAULT_VALUE_COLOR = Color.WHITE
 const __VICTORY_TITLE_STR = "Victory!"
 const __REINFORCE_TITLE_STR = "Reinforce"
 
+var __game_board_state_manager = null
+
 @onready var __attack_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/AttackerDie1, $AttackPopupCanvasLayer/AttackerDie2, $AttackPopupCanvasLayer/AttackerDie3]
 @onready var __defend_die_nodes: Array[AnimatedSprite2D] = [$AttackPopupCanvasLayer/DefenderDie1, $AttackPopupCanvasLayer/DefenderDie2]
 
@@ -77,8 +79,15 @@ func initialize_player_leaderboard_table(game_board_state_manager: GameBoardStat
       $PlayerLeaderboardTable.add_entry(PlayerManager.get_player_for_id(player_id).army_color, 
                                         game_board_state_manager.get_player_countries(player_id).size(), 
                                         game_board_state_manager.get_player_troop_count(player_id), 
-                                        0,
+                                        Utilities.get_num_reinforcements_earned(
+                                          GameBoard.CONTINENTS, 
+                                          GameBoard.CONTINENT_BONUSES, 
+                                          game_board_state_manager.get_player_countries(player_id)
+                                        ),
                                         0)
+                                       
+   game_board_state_manager.connect("country_occupation_update", self._on_country_occupation_update)
+   self.__game_board_state_manager = game_board_state_manager
    
 ## Deploy Reinforcements Remaining ##################################################################################### Deploy Reinforcements Remaining
 func is_deploy_reinforcements_remaining_showing() -> bool:
@@ -365,3 +374,36 @@ func enable_player_hand(enable: bool) -> void:
 
 func _on_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
    self.territory_card_toggled.emit(index, card, toggled_on)
+
+## Gmae Board Callbacks ################################################################################################
+func _on_country_occupation_update(country_id: int, old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
+   assert(self.__game_board_state_manager != null, "GameBoardStateManager reference was never stored!")
+   
+   # If another player was affected by this update they require an update
+   if old_deployment.player_id != new_deployment.player_id:
+      $PlayerLeaderboardTable.update_entry(
+         PlayerManager.get_player_turn_position(old_deployment.player_id), 
+         self.__game_board_state_manager.get_player_num_countries(old_deployment.player_id), 
+         self.__game_board_state_manager.get_player_troop_count(old_deployment.player_id), 
+         Utilities.get_num_reinforcements_earned(
+            GameBoard.CONTINENTS, 
+            GameBoard.CONTINENT_BONUSES, 
+            self.__game_board_state_manager.get_player_countries(old_deployment.player_id)
+         ), 
+         0 # TODO
+      )
+      
+   # One player will always have their entry updated at least and this will always be the new_deployment player
+   $PlayerLeaderboardTable.update_entry(
+      PlayerManager.get_player_turn_position(new_deployment.player_id), 
+      self.__game_board_state_manager.get_player_num_countries(new_deployment.player_id), 
+      self.__game_board_state_manager.get_player_troop_count(new_deployment.player_id), 
+      Utilities.get_num_reinforcements_earned(
+         GameBoard.CONTINENTS, 
+         GameBoard.CONTINENT_BONUSES, 
+         self.__game_board_state_manager.get_player_countries(new_deployment.player_id)
+      ), 
+      0 # TODO
+   )
+   
+   
