@@ -52,6 +52,7 @@ func _ready():
    self.enable_next_phase_button(true)
    self.enable_player_hand(false)
    
+   PlayerManager.connect("player_card_update", self._on_player_card_update)
    $PlayerHand.connect("card_toggled", self._on_territory_card_toggled)
    
 func show_debug_label(message: String) -> void:
@@ -84,7 +85,7 @@ func initialize_player_leaderboard_table(game_board_state_manager: GameBoardStat
                                           GameBoard.CONTINENT_BONUSES, 
                                           game_board_state_manager.get_player_countries(player_id)
                                         ),
-                                        0)
+                                        PlayerManager.get_num_player_cards(player_id))
                                        
    game_board_state_manager.connect("country_occupation_update", self._on_country_occupation_update)
    self.__game_board_state_manager = game_board_state_manager
@@ -372,6 +373,21 @@ func remove_cards_from_hand(indices: Array[int]) -> void:
 func enable_player_hand(enable: bool) -> void:
    $PlayerHand.enable_hand(enable)
 
+func _on_player_card_update(player_id: int, index: int, card_type: int, added: bool) -> void:
+   
+   # Player hand is the local player hand, update it if update for local player
+   if player_id == PlayerManager.get_local_player_id():
+      if added:
+         self.add_card_to_hand(card_type)
+      else:
+         self.remove_cards_from_hand([index])
+         
+   # Update leaderboard table for all players
+   if added:
+      $PlayerLeaderboardTable.increment_num_cards_for_entry(PlayerManager.get_player_turn_position(player_id), 1)
+   else:
+      $PlayerLeaderboardTable.decrement_num_cards_for_entry(PlayerManager.get_player_turn_position(player_id), 1)
+
 func _on_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
    self.territory_card_toggled.emit(index, card, toggled_on)
 
@@ -390,7 +406,7 @@ func _on_country_occupation_update(country_id: int, old_deployment: Types.Deploy
             GameBoard.CONTINENT_BONUSES, 
             self.__game_board_state_manager.get_player_countries(old_deployment.player_id)
          ), 
-         0 # TODO
+         PlayerManager.get_num_player_cards(old_deployment.player_id)
       )
       
    # One player will always have their entry updated at least and this will always be the new_deployment player
@@ -403,7 +419,7 @@ func _on_country_occupation_update(country_id: int, old_deployment: Types.Deploy
          GameBoard.CONTINENT_BONUSES, 
          self.__game_board_state_manager.get_player_countries(new_deployment.player_id)
       ), 
-      0 # TODO
+      PlayerManager.get_num_player_cards(new_deployment.player_id)
    )
    
    

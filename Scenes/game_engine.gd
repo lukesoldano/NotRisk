@@ -72,10 +72,6 @@ enum TroopMovementType
 
 var __active_turn_phase: TurnPhase = TurnPhase.START
 
-# TODO: Move to player manager
-# key: PlayerId, value: Array[CardType]
-var __player_cards: Dictionary[int, Array] = {}
-
 # State machine metadata
 const __SOURCE_COUNTRY_KEY = "src"
 const __DESTINATION_COUNTRY_KEY = "dest"
@@ -91,11 +87,6 @@ const __KNOCKED_OUT_PLAYER = "knocked_out_player"
 var __state_machine_metadata: Dictionary[String, Variant] = {}
 
 func _ready():
-   # TODO: Remove
-   for player_id in PlayerManager.get_all_player_ids():
-      self.__player_cards[player_id] = []
-   #
-   
    $GameBoard.state_manager.initialize_with_random_deployments()
    $GameBoardHUD.initialize_player_leaderboard_table($GameBoard.state_manager)
    
@@ -166,7 +157,7 @@ func _on_next_phase_requested() -> void:
                              " does not equal zero")
             return
             
-         if self.__player_cards[PlayerManager.get_local_player_id()].size() >= Constants.MAX_TERRITORY_CARDS_IN_HAND:
+         if PlayerManager.player_has_max_cards(PlayerManager.get_local_player_id()):
             Logger.log_error("_on_next_phase_requested: Local player requested next phase from deploy phase, but must play a territory card combo!")
             return
             
@@ -271,8 +262,8 @@ func __deploy_select_country(country: Types.Country):
 func _on_first_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
    var ACTIVE_PLAYER_ID = PlayerManager.get_active_player_id()
    
-   assert(index < self.__player_cards[ACTIVE_PLAYER_ID].size(), "Invalid index for player's card list!")
-   assert(self.__player_cards[ACTIVE_PLAYER_ID][index] == card, "Card at index does not match card passed in!")
+   assert(index < PlayerManager.get_num_player_cards(PlayerManager.get_active_player_id()), "Invalid index for player's card list!")
+   assert(PlayerManager.get_player_card_at_index(PlayerManager.get_active_player_id(), index) == card, "Card at index does not match card passed in!")
 
    if toggled_on:
       var selected_indices: Array[int] = [index]
@@ -417,8 +408,9 @@ func _on_deploy_playing_cards_state_exited() -> void:
       
 func _on_deploy_playing_cards_territory_card_toggled(index: int, _card: Types.CardType, toggled_on: bool) -> void:
    var ACTIVE_PLAYER_ID = PlayerManager.get_active_player_id()
+   var NUM_PLAYER_CARDS = PlayerManager.get_num_player_cards(ACTIVE_PLAYER_ID)
    
-   assert(self.__player_cards.has(ACTIVE_PLAYER_ID) and self.__player_cards[ACTIVE_PLAYER_ID].size() != 0, "Current player does not have any cards!")
+   assert(NUM_PLAYER_CARDS > 0, "Current player does not have any cards!")
    assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
    assert(self.__state_machine_metadata.has(self.__CARD_INDICES_SELECTED_KEY), "Territory card indices not set previously!")
    
@@ -446,24 +438,27 @@ func _on_deploy_playing_cards_territory_card_toggled(index: int, _card: Types.Ca
    
    # See if this is a complete hand
    if SELECTED_INDICES.size() == Constants.NUM_TERRITORY_CARDS_IN_PLAYABLE_HAND:
-      assert(self.__player_cards[ACTIVE_PLAYER_ID].size() >= SELECTED_INDICES.size(), "Somehow there are less territory cards than selected card indices")
-      assert(self.__player_cards[ACTIVE_PLAYER_ID].size() > SELECTED_INDICES[0], "Selected index 0 is out of bounds!")
-      assert(self.__player_cards[ACTIVE_PLAYER_ID].size() > SELECTED_INDICES[1], "Selected index 0 is out of bounds!")
-      assert(self.__player_cards[ACTIVE_PLAYER_ID].size() > SELECTED_INDICES[2], "Selected index 0 is out of bounds!")
+      assert(NUM_PLAYER_CARDS >= SELECTED_INDICES.size(), "Somehow there are less territory cards than selected card indices")
+      assert(NUM_PLAYER_CARDS > SELECTED_INDICES[0], "Selected index 0 is out of bounds!")
+      assert(NUM_PLAYER_CARDS > SELECTED_INDICES[1], "Selected index 0 is out of bounds!")
+      assert(NUM_PLAYER_CARDS > SELECTED_INDICES[2], "Selected index 0 is out of bounds!")
       
       var hand_played = false
+
+      var FIRST_PLAYER_CARD = PlayerManager.get_player_card_at_index(ACTIVE_PLAYER_ID, SELECTED_INDICES[0])
+      var SECOND_PLAYER_CARD = PlayerManager.get_player_card_at_index(ACTIVE_PLAYER_ID, SELECTED_INDICES[1])
+      var THIRD_PLAYER_CARD = PlayerManager.get_player_card_at_index(ACTIVE_PLAYER_ID, SELECTED_INDICES[2])
       
       # Is hand three of a kind?
-      if self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[0]] == self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[1]] and \
-         self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[1]] == self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[2]]:
+      if FIRST_PLAYER_CARD == SECOND_PLAYER_CARD and SECOND_PLAYER_CARD == THIRD_PLAYER_CARD:
             
-            self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_all_of_a_kind(self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[0]])
+            self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_all_of_a_kind(FIRST_PLAYER_CARD)
             hand_played = true
             
       # Is hand one of each?
-      elif self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[0]] != self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[1]] and \
-           self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[1]] != self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[2]] and \
-           self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[0]] != self.__player_cards[ACTIVE_PLAYER_ID][SELECTED_INDICES[2]]: 
+      elif FIRST_PLAYER_CARD != SECOND_PLAYER_CARD and \
+           SECOND_PLAYER_CARD != THIRD_PLAYER_CARD and \
+           FIRST_PLAYER_CARD != THIRD_PLAYER_CARD: 
             
             self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] += Utilities.get_territory_card_reward_for_one_of_each()
             hand_played = true
@@ -475,11 +470,10 @@ func _on_deploy_playing_cards_territory_card_toggled(index: int, _card: Types.Ca
          $GameBoardHUD.show_deploy_reinforcements_remaining(self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY])
          
          # Cards are sorted by indice, remove them in reverse order so that we do not have to do indice handling
-         self.__player_cards[ACTIVE_PLAYER_ID].remove_at(SELECTED_INDICES[2])
-         self.__player_cards[ACTIVE_PLAYER_ID].remove_at(SELECTED_INDICES[1])
-         self.__player_cards[ACTIVE_PLAYER_ID].remove_at(SELECTED_INDICES[0])
+         PlayerManager.remove_player_card_at_index(ACTIVE_PLAYER_ID, SELECTED_INDICES[2])
+         PlayerManager.remove_player_card_at_index(ACTIVE_PLAYER_ID, SELECTED_INDICES[1])
+         PlayerManager.remove_player_card_at_index(ACTIVE_PLAYER_ID, SELECTED_INDICES[0])
          
-         $GameBoardHUD.remove_cards_from_hand(SELECTED_INDICES)
          $PlayerTurnStateMachine.send_event("PlayingCardsToIdle")
          
 ## Attack Phase ######################################################################################################## Attack Phase
@@ -1133,11 +1127,8 @@ func _on_end_state_entered() -> void:
    # If player conquered any countries, give them a card
    if countries_conquered > 0:
       var random_card: Types.CardType = Types.CardType.values().pick_random()
-      self.__player_cards[PlayerManager.get_active_player_id()].append(random_card)
+      PlayerManager.add_player_card(PlayerManager.get_active_player_id(), random_card)
       
-      if PlayerManager.is_local_player_active():
-         $GameBoardHUD.add_card_to_hand(random_card)
-   
    $PlayerTurnStateMachine.send_event("EndToStart")
    
 func _on_end_state_exited() -> void:

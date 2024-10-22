@@ -2,6 +2,8 @@ extends Node
 
 ########################################################################################################################
 
+signal player_card_update(player_id: int, index: int, card_type: int, added: bool)
+
 # Represents the id of the player who is local to this machine
 var __local_player_id: int = 0
 
@@ -11,6 +13,7 @@ var __active_player_id: int = 0
 # The ids of all players in the turn order they will play in
 var __player_ids: Array[int] = [0, 1, 2, 3, 4, 5]
 
+# TODO: Have this initialized elsewhere
 # key: PlayerId, value: PLayer
 var __players: Dictionary[int, Player] = {
    0 : Player.new(0, Player.PlayerType.HUMAN, "Luke", Constants.SUPPORTED_ARMY_COLORS[5]),
@@ -20,6 +23,9 @@ var __players: Dictionary[int, Player] = {
    4 : Player.new(4, Player.PlayerType.AI, "Austin", Constants.SUPPORTED_ARMY_COLORS[3]),
    5 : Player.new(5, Player.PlayerType.AI, "Mike", Constants.SUPPORTED_ARMY_COLORS[4])
 }
+
+# key: PlayerId, value: Array[CardType]
+var __player_cards: Dictionary[int, Array] = {}
 
 ########################################################################################################################
 
@@ -35,6 +41,10 @@ func _ready():
    # Validate color selections
    for player_id in self.__players:
       assert(Constants.SUPPORTED_ARMY_COLORS.has(self.__players[player_id].army_color), "Unsupported army color assigned to player!")
+      
+   # Initialize cards struct
+   for player_id in self.__player_ids:
+      self.__player_cards[player_id] = []
 
 func get_local_player_id() -> int:
    return self.__local_player_id
@@ -111,3 +121,52 @@ func get_last_remaining_player_id() -> int:
          
    assert(false, "Could not find the last remaining player!")
    return Constants.INVALID_ID
+
+func get_num_player_cards(player_id: int) -> int:
+   assert(player_id != Constants.INVALID_ID, "Invalid player_id passed to PlayerManager::get_num_player_cards")
+   assert(self.__player_ids.has(player_id), "Unknown player_id provided to PlayerManager::get_num_player_cards")
+   assert(self.__players.has(player_id), "Unknown player_id provided to PlayerManager::get_num_player_cards")
+   assert(self.__player_cards.has(player_id), "Unknown player_id provided to PlayerManager::get_num_player_cards")
+   
+   return self.__player_cards[player_id].size()
+
+func get_player_card_at_index(player_id: int, index: int) -> int:
+   assert(player_id != Constants.INVALID_ID, "Invalid player_id passed to PlayerManager::get_player_card_at_index")
+   assert(self.__player_ids.has(player_id), "Unknown player_id provided to PlayerManager::get_player_card_at_index")
+   assert(self.__players.has(player_id), "Unknown player_id provided to PlayerManager::get_player_card_at_index")
+   assert(self.__player_cards.has(player_id), "Unknown player_id provided to PlayerManager::get_player_card_at_index")
+   assert(index >= 0 && index < self.__player_cards[player_id].size(), "Invalid index provided to PlayerManager::get_player_card_at_index")
+   
+   return self.__player_cards[player_id][index]
+
+func add_player_card(player_id: int, card_type: int) -> void:
+   assert(player_id != Constants.INVALID_ID, "Invalid player_id passed to PlayerManager::add_player_card")
+   assert(self.__player_ids.has(player_id), "Unknown player_id provided to PlayerManager::add_player_card")
+   assert(self.__players.has(player_id), "Unknown player_id provided to PlayerManager::add_player_card")
+   assert(self.__player_cards.has(player_id), "Unknown player_id provided to PlayerManager::add_player_card")
+   assert(self.__player_cards[player_id].size() < Constants.MAX_TERRITORY_CARDS_IN_HAND, "Player already has max cards!")
+   assert(card_type >= 0 && card_type < Constants.NUM_TERRITORY_CARD_TYPES, "Invalid card_type provided to PlayerManager::add_player_card")
+   
+   self.__player_cards[player_id].append(card_type)
+   
+   self.player_card_update.emit(player_id, self.__player_cards[player_id].size() - 1, card_type, true)
+
+func remove_player_card_at_index(player_id: int, index: int) -> void:
+   assert(player_id != Constants.INVALID_ID, "Invalid player_id passed to PlayerManager::remove_player_card_at_index")
+   assert(self.__player_ids.has(player_id), "Unknown player_id provided to PlayerManager::remove_player_card_at_index")
+   assert(self.__players.has(player_id), "Unknown player_id provided to PlayerManager::remove_player_card_at_index")
+   assert(self.__player_cards.has(player_id), "Unknown player_id provided to PlayerManager::remove_player_card_at_index")
+   assert(index >= 0 && index < self.__player_cards[player_id].size(), "Invalid index provided to PlayerManager::remove_player_card_at_index")
+   
+   var CARD_TYPE = self.__player_cards[player_id][index]
+   self.__player_cards[player_id].remove_at(index)
+   
+   self.player_card_update.emit(player_id, index, CARD_TYPE, false)
+
+func player_has_max_cards(player_id: int) -> bool:
+   assert(player_id != Constants.INVALID_ID, "Invalid player_id passed to PlayerManager::player_has_max_cards")
+   assert(self.__player_ids.has(player_id), "Unknown player_id provided to PlayerManager::player_has_max_cards")
+   assert(self.__players.has(player_id), "Unknown player_id provided to PlayerManager::player_has_max_cards")
+   assert(self.__player_cards.has(player_id), "Unknown player_id provided to PlayerManager::player_has_max_cards")
+   
+   return self.__player_cards[player_id].size() >= Constants.MAX_TERRITORY_CARDS_IN_HAND

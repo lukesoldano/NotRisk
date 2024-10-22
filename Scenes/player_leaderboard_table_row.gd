@@ -48,6 +48,14 @@ func update_values(i_num_countries: int, i_num_armies: int, i_num_reinforcements
    
    self.__update_table_values()
    
+func increment_num_cards(increment: int) -> void:
+   self.num_cards += increment
+   self.__update_table_values()
+   
+func decrement_num_cards(decrement: int) -> void:
+   self.num_cards -= decrement
+   self.__update_table_values()
+   
 func __update_table_values() -> void:
    $NumCountriesLabel.text = self.__format_string_to_length(str(self.num_countries), self.__COLUMN_SPACING)
    $NumArmiesLabel.text = self.__format_string_to_length(str(self.num_armies), self.__COLUMN_SPACING)

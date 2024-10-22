@@ -16,3 +16,15 @@ func update_entry(index: int, num_countries: int, num_armies: int, num_reinforce
    assert(index < self.__entries.size(), "Invalid index, out of bounds of table")
    
    self.__entries[index].update_values(num_countries, num_armies, num_reinforcements, num_cards)
+   
+func increment_num_cards_for_entry(index: int, increment: int) -> void:
+   assert(index < self.__entries.size(), "Invalid index, out of bounds of table")
+   assert(increment > 0, "Invalid increment provided")
+   
+   self.__entries[index].increment_num_cards(increment)
+   
+func decrement_num_cards_for_entry(index: int, decrement: int) -> void:
+   assert(index < self.__entries.size(), "Invalid index, out of bounds of table")
+   assert(decrement > 0, "Invalid decrement provided")
+   
+   self.__entries[index].decrement_num_cards(decrement)
