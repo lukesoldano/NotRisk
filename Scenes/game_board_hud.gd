@@ -51,6 +51,7 @@ func _ready():
    self.hide_troop_movement_popup()
    self.enable_next_phase_button(true)
    self.enable_player_hand(false)
+   self.remove_player_selection_line()
    
    PlayerManager.connect("player_card_update", self._on_player_card_update)
    $PlayerHand.connect("card_toggled", self._on_territory_card_toggled)
@@ -391,7 +392,7 @@ func _on_player_card_update(player_id: int, index: int, card_type: int, added: b
 func _on_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
    self.territory_card_toggled.emit(index, card, toggled_on)
 
-## Gmae Board Callbacks ################################################################################################
+## Game Board Callbacks ################################################################################################
 func _on_country_occupation_update(country_id: int, old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
    assert(self.__game_board_state_manager != null, "GameBoardStateManager reference was never stored!")
    
@@ -422,4 +423,34 @@ func _on_country_occupation_update(country_id: int, old_deployment: Types.Deploy
       PlayerManager.get_num_player_cards(new_deployment.player_id)
    )
    
+# TODO: TBD If any of this logic remains and we want an arrow pointing system
+## InterCountry Arrow Drawing ##########################################################################################   
+var __draw_player_selection_line_to_cursor: bool = false
+
+func _input(event: InputEvent) -> void:
+   if $PlayerSelectionLine.visible and \
+      self.__draw_player_selection_line_to_cursor and \
+      event is InputEventMouseMotion:
+         
+      $PlayerSelectionLine.set_point_position(1, event.position)
+      $PlayerSelectionLine.queue_redraw()
+
+func set_player_selection_line_origin(origin: Vector2, follow_cursor_for_destination: bool) -> void:
+   $PlayerSelectionLine.set_point_position(0, origin)
+   $PlayerSelectionLine.set_point_position(1, origin)
+   $PlayerSelectionLine.visible = follow_cursor_for_destination
+   self.__draw_player_selection_line_to_cursor = follow_cursor_for_destination
+   
+func set_player_selection_line_destination(destination: Vector2) -> void:
+   $PlayerSelectionLine.set_point_position(1, destination)
+   $PlayerSelectionLine.visible = true
+   self.__draw_player_selection_line_to_cursor = false
+   $PlayerSelectionLine.queue_redraw()
+   
+func remove_player_selection_line() -> void:
+   $PlayerSelectionLine.visible = false
+   $PlayerSelectionLine.set_point_position(0, Vector2.ZERO)
+   $PlayerSelectionLine.set_point_position(1, Vector2.ZERO)
+   self.__draw_player_selection_line_to_cursor = false
+   $PlayerSelectionLine.queue_redraw()
    

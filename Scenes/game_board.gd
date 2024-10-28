@@ -95,6 +95,10 @@ func _on_country_occupation_updated(country_id: int, old_deployment: Types.Deplo
    assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::_on_country_occupation_updated()")
    self.__country_node_map[country_id].set_deployment(new_deployment)
    
+func get_country_global_position(country_id: int) -> Vector2:
+   assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::get_country_global_position()")
+   return self.__country_node_map[country_id].get_node("OccupationWidget").get_global_position()
+   
 func get_countries_that_neighbor(country_id: int) -> Array:
    assert(self.__country_node_map.has(country_id), "Invalid country")
    return self.__country_node_map[country_id].neighbors

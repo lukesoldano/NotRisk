@@ -239,20 +239,16 @@ func __deploy_select_country(country: Types.Country):
    
    var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
    
-   if !$GameBoard.state_manager.get_player_countries(PlayerManager.get_active_player_id()).has(country):
+   if !$GameBoard.state_manager.player_occupies_country(PlayerManager.get_active_player_id(), country):
       Logger.log_error("DeployIdle: Local player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do not own it")
-      assert(PlayerManager.is_local_player_active(), 
-             "Non-local player selected a country to deploy to that they do not own!")
       return
    
    if REINFORCEMENTS_REMAINING <= 0:
       Logger.log_error("DeployIdle: Player selected country: " + 
                        Types.Country.keys()[country] + 
                        ", but they do not have any reinforcements remaining")
-      assert(PlayerManager.is_local_player_active(), 
-             "Non-local player selected a country to deploy to without any remaining reinforcements!")
       return
       
    self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY] = country
@@ -485,6 +481,10 @@ func _on_attack_state_entered() -> void:
    
    self.turn_phase_updated.emit(self.__active_turn_phase)
    
+func _on_attack_state_exited():
+   if PlayerManager.is_local_player_active():
+      $GameBoardHUD.remove_player_selection_line()
+   
 ## Attack (Idle) Subphase ############################################################################################## Attack (Idle) Subphase
 func _on_attack_idle_state_entered() -> void:
    self.__clear_interphase_state_machine_metadata()
@@ -493,6 +493,7 @@ func _on_attack_idle_state_entered() -> void:
                      
    if PlayerManager.is_local_player_active():
       $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
+      $GameBoardHUD.remove_player_selection_line()
       
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = PlayerManager.get_active_player()
@@ -543,6 +544,7 @@ func _on_attack_source_selected_state_entered() -> void:
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    
    if PlayerManager.is_local_player_active():
+      $GameBoardHUD.set_player_selection_line_origin($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]), true)
       $GameBoard.connect("country_clicked", self._on_attack_source_selected_country_clicked)
       
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
@@ -611,6 +613,7 @@ func _on_attack_destination_selected_state_entered() -> void:
    var DEFENDING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
    
    if PlayerManager.is_local_player_active():       
+      $GameBoardHUD.set_player_selection_line_destination($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]))
       $GameBoardHUD.connect("attack_quit_requested", self._on_attack_destination_selected_quit_requested)
       $GameBoardHUD.connect("attack_roll_requested", self._on_attack_destination_selected_roll_requested)
       $GameBoardHUD.connect("attack_die_count_change_requested", self._on_attack_destination_selected_die_count_change_requested)
@@ -772,9 +775,11 @@ func _on_attack_rolling_state_entered() -> void:
    if $GameBoard.state_manager.get_num_troops_deployed_to_country(ATTACKING_COUNTRY) <= 1:
       $GameBoardHUD.hide_attack_popup()
       $PlayerTurnStateMachine.send_event("RollingToIdle")
+      
    elif $GameBoard.state_manager.get_num_troops_deployed_to_country(DEFENDING_COUNTRY) <= 0:
       $GameBoardHUD.hide_attack_popup()
       $PlayerTurnStateMachine.send_event("RollingToVictory")
+      
    else:
       $PlayerTurnStateMachine.send_event("RollingToDestinationSelected")
       
@@ -932,10 +937,13 @@ func _on_reinforce_state_entered() -> void:
    
    self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] = 0
    
-   
    self.__log_phase_entered()
    
    self.turn_phase_updated.emit(self.__active_turn_phase)
+   
+func _on_reinforce_state_exited():
+   if PlayerManager.is_local_player_active():
+      $GameBoardHUD.remove_player_selection_line()
    
 ## Reinforce (Idle) Subphase ########################################################################################### Reinforce (Idle) Subphase
 func _on_reinforce_idle_state_entered() -> void:
@@ -985,8 +993,11 @@ func _on_reinforce_source_country_clicked(country: Types.Country, action_tag: St
 ## Reinforce (Source Selected) Subphase ################################################################################ Reinforce (Source Selected) Subphase
 func _on_reinforce_source_selected_state_entered() -> void:
    self.__log_subphase_entered(ReinforceTurnSubPhase.keys()[ReinforceTurnSubPhase.SOURCE_SELECTED])
+   
+   assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
                      
    if PlayerManager.is_local_player_active():
+      $GameBoardHUD.set_player_selection_line_origin($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]), true)
       $GameBoard.connect("country_clicked", self._on_reinforce_destination_country_clicked)
       
 func _on_reinforce_source_selected_state_exited() -> void:
@@ -1043,6 +1054,7 @@ func _on_reinforce_destination_selected_state_entered() -> void:
    self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = SRC_COUNTRY_TROOPS - 1
   
    if PlayerManager.is_local_player_active():
+      $GameBoardHUD.set_player_selection_line_destination($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]))
       $GameBoardHUD.connect("troop_movement_troop_count_change_requested", self._on_reinforce_troop_count_change_requested)
       $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
       
@@ -1058,6 +1070,7 @@ func _on_reinforce_destination_selected_state_exited() -> void:
    if PlayerManager.is_local_player_active():
       $GameBoardHUD.disconnect("troop_movement_troop_count_change_requested", self._on_reinforce_troop_count_change_requested)
       $GameBoardHUD.disconnect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
+      $GameBoardHUD.remove_player_selection_line()
       
    $GameBoardHUD.hide_troop_movement_popup()
    
