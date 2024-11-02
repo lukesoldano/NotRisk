@@ -1,9 +1,0 @@
-res://Scenes/game_board_hud.tscn
-res://Resources/attack_dice.tres
-res://Resources/defense_dice.tres
-res://Scenes/game_board.tscn
-res://Scenes/game_engine.tscn
-res://Scenes/country.tscn
-res://Scenes/game_board_hud.gd
-res://Scenes/game_engine.gd
-res://Scenes/game_board.gd
