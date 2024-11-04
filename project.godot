@@ -19,6 +19,7 @@ config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 Config="*res://Scripts/config.gd"
 Logger="*res://Scripts/logger.gd"
 PlayerManager="*res://Scripts/player_manager.gd"
+CountrySpriteLoader="*res://Scripts/country_sprite_loader.gd"
 
 [display]
 

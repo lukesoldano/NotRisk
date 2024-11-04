@@ -34,6 +34,51 @@ const CONTINENT_BONUSES: Dictionary[Types.Continent, int] = {
    Types.Continent.SOUTH_AMERICA: 2
 }
 
+var __country_label_map: Dictionary[Types.Country, String] = {
+   Types.Country.AFGHANISTAN : "Afghanistan",
+   Types.Country.ALASKA : "Alaska",
+   Types.Country.ALBERTA : "Alberta",
+   Types.Country.ARGENTINA : "Argentina",
+   Types.Country.BRAZIL : "Brazil",
+   Types.Country.CENTRAL_AMERICA : "Central America",
+   Types.Country.CHINA : "China",
+   Types.Country.CONGO : "Congo",
+   Types.Country.EAST_AFRICA : "East Africa",
+   Types.Country.EASTERN_AUSTRALIA : "Eastern Australia",
+   Types.Country.EASTERN_UNITED_STATES : "Eastern United States",
+   Types.Country.EGYPT : "Egypt",
+   Types.Country.GREAT_BRITAIN : "Great Britain",
+   Types.Country.GREENLAND : "Greenland",
+   Types.Country.ICELAND : "Iceland",
+   Types.Country.INDIA : "India",
+   Types.Country.INDONESIA : "Indonesia",
+   Types.Country.IRKUTSK : "Irkutsk",
+   Types.Country.JAPAN : "Japan",
+   Types.Country.KAMCHATKA : "Kamchatka",
+   Types.Country.MADAGASCAR : "Madagascar",
+   Types.Country.MIDDLE_EAST : "Middle East",
+   Types.Country.MONGOLIA : "Mongolia",
+   Types.Country.NEW_GUINEA : "New Guinea",
+   Types.Country.NORTH_AFRICA : "North Africa",
+   Types.Country.NORTHERN_EUROPE : "Northern Europe",
+   Types.Country.NORTHWEST_TERRITORY : "Northwest Territory",
+   Types.Country.ONTARIO : "Ontario",
+   Types.Country.PERU : "Peru",
+   Types.Country.QUEBEC : "Quebec",
+   Types.Country.SCANDINAVIA : "Scandinavia",
+   Types.Country.SIAM : "Siam",
+   Types.Country.SIBERIA : "Siberia",
+   Types.Country.SOUTH_AFRICA : "South Africa",
+   Types.Country.SOUTHERN_EUROPE : "Southern Europe",
+   Types.Country.UKRAINE : "Ukraine",
+   Types.Country.URAL : "Ural",
+   Types.Country.VENEZUELA : "Venezuela",
+   Types.Country.WESTERN_AUSTRALIA : "Western Australia",
+   Types.Country.WESTERN_EUROPE : "Western Europe",
+   Types.Country.WESTERN_UNITED_STATES : "Western United States",
+   Types.Country.YAKUTSK : "Yakutsk"
+}
+
 @onready var __country_node_map: Dictionary[Types.Country, Country] = { 
    Types.Country.AFGHANISTAN: $Continents/Asia/Afghanistan,
    Types.Country.ALASKA: $Continents/NorthAmerica/Alaska,
@@ -84,12 +129,21 @@ var geography_manager: GameBoardGeographyManager = GameBoardGeographyManager.new
 var state_manager: GameBoardStateManager = GameBoardStateManager.new()
 
 func _ready():
+   # Set country labels for all countries
+   assert(self.__country_label_map.size() == self.__country_node_map.size(), "Country node map and country label map have differing sizes!")
+   for country_id in self.__country_label_map:
+      assert(self.__country_node_map.has(country_id), "Country node map does not contain country from country_label_map!")
+      self.__country_node_map[country_id].country_label = self.__country_label_map[country_id]
+   
    self.__validate_borders()
    
    for node in self.__country_node_map:
       self.__country_node_map[node].connect("clicked", self._on_country_clicked)
       
    state_manager.connect("country_occupation_update", self._on_country_occupation_updated)
+   
+func populate_country_sprites() -> bool:
+   return false
       
 func _on_country_occupation_updated(country_id: int, old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
    assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::_on_country_occupation_updated()")
@@ -98,6 +152,12 @@ func _on_country_occupation_updated(country_id: int, old_deployment: Types.Deplo
 func get_country_global_position(country_id: int) -> Vector2:
    assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::get_country_global_position()")
    return self.__country_node_map[country_id].get_node("OccupationWidget").get_global_position()
+   
+func get_country_label(country_id: int) -> String:
+   assert(self.__country_label_map.has(country_id), "Invalid country")
+   if self.__country_label_map.has(country_id):
+      return self.__country_label_map[country_id]
+   return ""
    
 func get_countries_that_neighbor(country_id: int) -> Array:
    assert(self.__country_node_map.has(country_id), "Invalid country")

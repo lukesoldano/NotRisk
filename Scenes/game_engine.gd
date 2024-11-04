@@ -87,6 +87,16 @@ const __KNOCKED_OUT_PLAYER = "knocked_out_player"
 var __state_machine_metadata: Dictionary[String, Variant] = {}
 
 func _ready():
+   var success: bool = CountrySpriteLoader.load_country_sprites_from_file(
+         "res://Assets/Sprites/GameBoard/Countries_SpriteSheet.png",
+         "res://Assets/Sprites/GameBoard/Countries_SpriteSheet.json",
+         $GameBoard.get_country_label
+      )
+   assert(success, "Failed to load country sprites from country sprite sheet!")
+   
+   success = $GameBoard.populate_country_sprites()
+   assert(success, "Failed to populate country sprites on GameBoard!")
+   
    $GameBoard.state_manager.initialize_with_random_deployments()
    $GameBoardHUD.initialize_player_leaderboard_table($GameBoard.state_manager)
    
@@ -231,7 +241,7 @@ func _on_deploy_idle_state_exited() -> void:
       $GameBoard.disconnect("country_clicked", self._on_deploy_idle_country_clicked)
       
 func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_deploy_idle_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   Logger.log_message("_on_deploy_idle_country_clicked( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
    self.__deploy_select_country(country)
    
 func __deploy_select_country(country: Types.Country):
@@ -241,13 +251,13 @@ func __deploy_select_country(country: Types.Country):
    
    if !$GameBoard.state_manager.player_occupies_country(PlayerManager.get_active_player_id(), country):
       Logger.log_error("DeployIdle: Local player selected country: " + 
-                       Types.Country.keys()[country] + 
+                       $GameBoard.get_country_label(country) + 
                        ", but they do not own it")
       return
    
    if REINFORCEMENTS_REMAINING <= 0:
       Logger.log_error("DeployIdle: Player selected country: " + 
-                       Types.Country.keys()[country] + 
+                       $GameBoard.get_country_label(country) + 
                        ", but they do not have any reinforcements remaining")
       return
       
@@ -508,7 +518,7 @@ func _on_attack_idle_state_exited() -> void:
       $GameBoard.disconnect("country_clicked", self._on_attack_source_country_clicked)
    
 func _on_attack_source_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_attack_source_country_selected( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   Logger.log_message("_on_attack_source_country_selected( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
    
    if !PlayerManager.is_local_player_active():
       Logger.log_error("AttackIdle: Local player selected country, but it is not their turn")
@@ -519,7 +529,7 @@ func _on_attack_source_country_clicked(country: Types.Country, action_tag: Strin
 func __attack_select_source_country(country_id: int) -> void:
    if !$GameBoard.state_manager.player_occupies_country(PlayerManager.get_active_player_id(), country_id):
       Logger.log_error("AttackIdle: Player selected country: " + 
-                       Types.Country.keys()[country_id] + 
+                       $GameBoard.get_country_label(country_id) + 
                        ", but they do not own it")
       assert(PlayerManager.is_local_player_active(), 
              "Non-local player selected a country to attack from that they do not own!")
@@ -527,7 +537,7 @@ func __attack_select_source_country(country_id: int) -> void:
    
    if $GameBoard.state_manager.get_num_troops_deployed_to_country(country_id) < 2:
       Logger.log_error("AttackIdle: Player selected country: " + 
-                       Types.Country.keys()[country_id] + 
+                       $GameBoard.get_country_label(country_id) + 
                        ", but they do not have enough attackers")
       assert(PlayerManager.is_local_player_active(), 
              "Non-local player selected a country to attack from without enough attackers available!")
@@ -565,7 +575,7 @@ func _on_attack_source_selected_state_input(event: InputEvent) -> void:
          $PlayerTurnStateMachine.send_event("SourceSelectedToIdle")
    
 func _on_attack_source_selected_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_attack_destination_country_selected( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   Logger.log_message("_on_attack_destination_country_selected( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
    
    if !PlayerManager.is_local_player_active():
       Logger.log_error("AttackSourceSelected: Local player selected country, but it is not their turn")
@@ -583,7 +593,7 @@ func __attack_select_destination_country(country_id: int) -> void:
       
    if $GameBoard.state_manager.player_occupies_country(PlayerManager.get_active_player_id(), country_id):
       Logger.log_error("AttackSourceSelected: Player selected country: " + 
-                       Types.Country.keys()[country_id] + 
+                       $GameBoard.get_country_label(country_id) + 
                        ", but they do already own it")
       assert(PlayerManager.is_local_player_active(), 
              "Non-local player selected a country to attack that they already own!")
@@ -591,7 +601,7 @@ func __attack_select_destination_country(country_id: int) -> void:
       
    if !$GameBoard.countries_are_neighbors(SRC_COUNTRY, country_id):
       Logger.log_error("AttackSourceSelected: Player selected country: " + 
-                       Types.Country.keys()[country_id] + 
+                       $GameBoard.get_country_label(country_id) + 
                        ", but it does not neighbor: " +
                        Types.Country.keys()[SRC_COUNTRY])
       assert(PlayerManager.is_local_player_active(), 
@@ -963,26 +973,26 @@ func _on_reinforce_idle_state_exited() -> void:
       $GameBoard.disconnect("country_clicked", self._on_reinforce_source_country_clicked)
       
 func _on_reinforce_source_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_reinforce_source_country_clicked( " + Types.Country.keys()[country] + ", " + action_tag + " )")
+   Logger.log_message("_on_reinforce_source_country_clicked( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
    
    assert(self.__state_machine_metadata.has(self.__NUM_REINFORCE_MOVEMENTS_UTILIZED), "Num reinforce movements not set previously")
    
    if self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] >= Constants.MAX_REINFORCES_ALLOWED:
       Logger.log_error("ReinforceIdle: Local player selected country: " + 
-                       Types.Country.keys()[country] + 
+                       $GameBoard.get_country_label(country) + 
                        ", but they have no more reinforce movements remaining as they have already used: " +
                        str(self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED]))
       return
       
    if !$GameBoard.state_manager.player_occupies_country(PlayerManager.get_active_player_id(), country):
       Logger.log_error("ReinforceIdle: Local player selected country: " + 
-                       Types.Country.keys()[country] + 
+                       $GameBoard.get_country_label(country) + 
                        ", but they do not own it")
       return
       
    if $GameBoard.state_manager.get_num_troops_deployed_to_country(country) <= 1:
       Logger.log_error("ReinforceIdle: Local player selected country: " + 
-                       Types.Country.keys()[country] + 
+                       $GameBoard.get_country_label(country) + 
                        ", but they do not have any moveable troops")
       return
       
