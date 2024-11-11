@@ -1136,6 +1136,11 @@ Continents_SpriteSheet.png::CompressedTexture2D::4615976351678017982::0::0::1:::
 Countries_SpriteSheet.json::JSON::-1::0::0::1::::<><>::
 Countries_SpriteSheet.png::CompressedTexture2D::4921141694014336962::0::0::1::::<><>::
 GameBoard.png::CompressedTexture2D::6293051552638908177::0::0::1::::<><>::
+TEST_Countries_SpriteSheet2.png::CompressedTexture2D::3085862169907654737::0::0::1::::<><>::
+TEST_Countries_SpriteSheet6.png::CompressedTexture2D::6634724954446073069::0::0::1::::<><>::
+TEST_Countries_SpriteSheet10.png::CompressedTexture2D::8315776341298645649::0::0::1::::<><>::
+TEST_Countries_SpriteSheet.json::JSON::-1::0::0::1::::<><>::
+TEST_Countries_SpriteSheet.png::CompressedTexture2D::704581344343528943::0::0::1::::<><>::
 ::res://Assets/Sprites/TerritoryCard/::0
 TerritoryCard.png::CompressedTexture2D::8461889327712616885::0::0::1::::<><>::
 ::res://Docs/::0
@@ -1146,7 +1151,7 @@ defense_dice.tres::SpriteFrames::1543800964527378176::0::0::1::::<><>::uid://7d8
 country.gd::GDScript::-1::0::0::1::::Country<>Node2D<>res://Assets/NodeIcons/Country.svg::
 country.tscn::PackedScene::3793652244648066002::0::0::1::::<><>::res://Scenes/country.gd<>uid://bsuc30gsicn62::::res://Scenes/occupation_widget.tscn
 game_board.gd::GDScript::-1::0::0::1::::GameBoard<>Node2D<>res://Assets/NodeIcons/GameBoard.svg::
-game_board.tscn::PackedScene::368245011280597164::0::0::1::::<><>::res://Scenes/game_board.gd<>uid://bubw5slieg3ja::::res://Scenes/country.tscn<>uid://cvwnv0ovqff6x::::res://Assets/Sprites/GameBoard/GameBoard.png
+game_board.tscn::PackedScene::368245011280597164::0::0::1::::<><>::res://Scenes/game_board.gd<>uid://bubw5slieg3ja::::res://Scenes/country.tscn
 game_board_hud.gd::GDScript::-1::0::0::1::::GameBoardHUD<>CanvasLayer<>res://Assets/NodeIcons/GameBoardHUD.svg::
 game_board_hud.tscn::PackedScene::5191237590212508143::0::0::1::::<><>::res://Scenes/game_board_hud.gd<>uid://dh4nkpli41k7r::::res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark24.png<>uid://dyqmx2rbblwrb::::res://Scenes/player_leaderboard_table.tscn<>uid://dfr17kog3wwre::::res://Resources/attack_dice.tres<>uid://c4w07sryq3opj::::res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark25.png<>uid://v83f83u75j01::::res://Resources/defense_dice.tres<>uid://bxsqe331nn2l::::res://Scenes/player_hand.tscn
 game_engine.gd::GDScript::-1::0::0::1::::GameEngine<>Node<>res://Assets/NodeIcons/GameEngine.svg::

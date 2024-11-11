@@ -66,7 +66,7 @@ func initialize_with_random_deployments() -> bool:
          
    # Notify susbcribers of initialized values
    for country_id in self.__country_deployments:
-      var null_deployment: Types.Deployment
+      var null_deployment := Types.Deployment.new(Constants.INVALID_ID , 0)
       self.country_occupation_update.emit(country_id, null_deployment, self.__country_deployments[country_id].duplicate())
          
    self.__log_country_deployments()

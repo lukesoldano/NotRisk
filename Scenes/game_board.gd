@@ -34,7 +34,7 @@ const CONTINENT_BONUSES: Dictionary[Types.Continent, int] = {
    Types.Continent.SOUTH_AMERICA: 2
 }
 
-var __country_label_map: Dictionary[Types.Country, String] = {
+var __country_label_map: Dictionary[int, String] = {
    Types.Country.AFGHANISTAN : "Afghanistan",
    Types.Country.ALASKA : "Alaska",
    Types.Country.ALBERTA : "Alberta",
@@ -129,11 +129,9 @@ var geography_manager: GameBoardGeographyManager = GameBoardGeographyManager.new
 var state_manager: GameBoardStateManager = GameBoardStateManager.new()
 
 func _ready():
-   # Set country labels for all countries
    assert(self.__country_label_map.size() == self.__country_node_map.size(), "Country node map and country label map have differing sizes!")
    for country_id in self.__country_label_map:
       assert(self.__country_node_map.has(country_id), "Country node map does not contain country from country_label_map!")
-      self.__country_node_map[country_id].country_label = self.__country_label_map[country_id]
    
    self.__validate_borders()
    
@@ -142,10 +140,38 @@ func _ready():
       
    state_manager.connect("country_occupation_update", self._on_country_occupation_updated)
    
+# TODO: ALL OF THIS CODE NEEDS TO BE WAY CLEANER AND LESS STUPID
 func populate_country_sprites() -> bool:
-   return false
+   const X_MARGIN = 100 * 1.5
+   const Y_MARGIN = 75 * 1.5
+   
+   var X_SCALAR = 0.75 * (Constants.DISPLAY_WINDOW_WIDTH / (CountrySpriteLoader.GAME_BOARD_SPRITE_SHEET_SCALE * CountrySpriteLoader.GAME_BOARD_SOURCE_WIDTH))
+   var Y_SCALAR = 0.75 * (Constants.DISPLAY_WINDOW_HEIGHT / (CountrySpriteLoader.GAME_BOARD_SPRITE_SHEET_SCALE * CountrySpriteLoader.GAME_BOARD_SOURCE_HEIGHT))
+   
+   for country_id in self.__country_node_map:
+      var texture = CountrySpriteLoader.get_sprite(country_id)
+      var source_sizing = CountrySpriteLoader.get_sprite_source_sizing(country_id)
       
-func _on_country_occupation_updated(country_id: int, old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
+      if texture == null or texture is not Texture2D or source_sizing == null or source_sizing is not Rect2:
+         Logger.log_error(
+            "Failed to populate country sprites, null texture or source_sizing for country: " + 
+            self.get_country_label(country_id)
+         )
+         return false
+         
+      source_sizing.position.x *= X_SCALAR
+      source_sizing.position.x -= (CountrySpriteLoader.GAME_BOARD_SOURCE_WIDTH - X_MARGIN)
+      source_sizing.position.y *= Y_SCALAR
+      source_sizing.position.y -= (CountrySpriteLoader.GAME_BOARD_SOURCE_HEIGHT - Y_MARGIN)
+      
+      self.__country_node_map[country_id].set_sprite(texture, Vector2(X_SCALAR, Y_SCALAR))
+      self.__country_node_map[country_id].position = source_sizing.position
+      
+      continue
+      
+   return true
+      
+func _on_country_occupation_updated(country_id: int, _old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
    assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::_on_country_occupation_updated()")
    self.__country_node_map[country_id].set_deployment(new_deployment)
    
@@ -158,6 +184,9 @@ func get_country_label(country_id: int) -> String:
    if self.__country_label_map.has(country_id):
       return self.__country_label_map[country_id]
    return ""
+   
+func get_country_labels() -> Dictionary[int, String]:
+   return self.__country_label_map
    
 func get_countries_that_neighbor(country_id: int) -> Array:
    assert(self.__country_node_map.has(country_id), "Invalid country")

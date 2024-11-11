@@ -1,5 +1,8 @@
 class_name Constants
 
+const DISPLAY_WINDOW_WIDTH = 1920
+const DISPLAY_WINDOW_HEIGHT = 1080
+
 const INVALID_ID: int = -1
 
 const MIN_NUM_PLAYERS: int = 2

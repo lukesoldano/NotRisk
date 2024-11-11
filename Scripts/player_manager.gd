@@ -103,14 +103,14 @@ func is_player_with_id_knocked_out(player_id: int) -> bool:
    return self.__player_countries[player_id].size() == 0
 
 func num_players_remaining() -> int:
-   var num_players_remaining := 0
+   var num_remaining := 0
    for player_id in self.__player_ids:
       if !self.is_player_with_id_knocked_out(player_id):
-         num_players_remaining += 1
+         num_remaining += 1
       
-   assert(num_players_remaining != 0, "Somehow, no players are still remaining in the game")
+   assert(num_remaining != 0, "Somehow, no players are still remaining in the game")
    
-   return num_players_remaining
+   return num_remaining
    
 func get_last_remaining_player_id() -> int:
    assert(self.num_players_remaining() == 1, "Can't get last remaining player as there are multiple left!")

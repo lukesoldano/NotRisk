@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://cf7w6o55pepoh"]
+[gd_scene load_steps=32 format=3 uid="uid://cf7w6o55pepoh"]
 
 [ext_resource type="Script" path="res://Scenes/game_board_hud.gd" id="1_0m68m"]
 [ext_resource type="Texture2D" uid="uid://dh4nkpli41k7r" path="res://Assets/kenney_onscreen-controls/Sprites/shaded-dark/shadedDark24.png" id="2_ds0wd"]
@@ -89,8 +89,6 @@ default_font_size = 32
 
 [sub_resource type="Theme" id="Theme_kubri"]
 default_font_size = 32
-
-[sub_resource type="Gradient" id="Gradient_b6e7j"]
 
 [node name="GameBoardHUD" type="CanvasLayer"]
 script = ExtResource("1_0m68m")
@@ -538,12 +536,6 @@ offset_left = 728.0
 offset_top = 920.0
 offset_right = 728.0
 offset_bottom = 1104.0
-
-[node name="PlayerSelectionLine" type="Line2D" parent="."]
-points = PackedVector2Array(0, 0, 0, 0)
-width = 5.0
-default_color = Color(1, 0.180392, 0, 0.72549)
-gradient = SubResource("Gradient_b6e7j")
 
 [connection signal="pressed" from="NextPhaseButton" to="." method="_on_next_phase_button_pressed"]
 [connection signal="pressed" from="DeployPopupCanvasLayer/ReduceTroopsButton" to="." method="_on_deploy_reduce_troops_button_pressed"]

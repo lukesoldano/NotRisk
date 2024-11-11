@@ -1,8 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://fim7aocqhl1u"]
+[gd_scene load_steps=3 format=3 uid="uid://fim7aocqhl1u"]
 
 [ext_resource type="Script" path="res://Scenes/game_board.gd" id="1_3bowi"]
 [ext_resource type="PackedScene" uid="uid://bubw5slieg3ja" path="res://Scenes/country.tscn" id="2_5rra6"]
-[ext_resource type="Texture2D" uid="uid://cvwnv0ovqff6x" path="res://Assets/Sprites/GameBoard/GameBoard.png" id="2_tn2dv"]
 
 [node name="GameBoard" type="Node2D"]
 script = ExtResource("1_3bowi")
@@ -14,6 +13,7 @@ color = Color(0.213763, 0.690321, 0.808662, 1)
 metadata/_edit_lock_ = true
 
 [node name="Connections" type="Node2D" parent="."]
+visible = false
 
 [node name="AlaskaKamchatka" type="Line2D" parent="Connections"]
 points = PackedVector2Array(183, 196, -73, 196)
@@ -153,11 +153,6 @@ width = 5.0
 default_color = Color(0, 0, 0, 1)
 metadata/_edit_lock_ = true
 
-[node name="MapSprite" type="Sprite2D" parent="."]
-position = Vector2(950, 540)
-texture = ExtResource("2_tn2dv")
-metadata/_edit_lock_ = true
-
 [node name="Continents" type="Node2D" parent="."]
 
 [node name="Africa" type="Node2D" parent="Continents"]
@@ -166,37 +161,31 @@ position = Vector2(379, 192)
 [node name="Congo" parent="Continents/Africa" instance=ExtResource("2_5rra6")]
 position = Vector2(542, 386)
 country = 7
-country_label = "Congo"
 neighbors = Array[int]([24, 8, 33])
 
 [node name="EastAfrica" parent="Continents/Africa" instance=ExtResource("2_5rra6")]
 position = Vector2(631, 330)
 country = 8
-country_label = "East Africa"
 neighbors = Array[int]([11, 24, 7, 33, 20, 21])
 
 [node name="Egypt" parent="Continents/Africa" instance=ExtResource("2_5rra6")]
 position = Vector2(555, 215)
 country = 11
-country_label = "Egypt"
 neighbors = Array[int]([34, 24, 8, 21])
 
 [node name="Madagascar" parent="Continents/Africa" instance=ExtResource("2_5rra6")]
 position = Vector2(677, 532)
 country = 20
-country_label = "Madagascar"
 neighbors = Array[int]([8, 33])
 
 [node name="NorthAfrica" parent="Continents/Africa" instance=ExtResource("2_5rra6")]
 position = Vector2(435, 269)
 country = 24
-country_label = "North Africa"
 neighbors = Array[int]([4, 39, 34, 11, 8, 7])
 
 [node name="SouthAfrica" parent="Continents/Africa" instance=ExtResource("2_5rra6")]
 position = Vector2(559, 510)
 country = 33
-country_label = "South Africa"
 neighbors = Array[int]([7, 8, 20])
 
 [node name="Asia" type="Node2D" parent="Continents"]
@@ -204,73 +193,61 @@ position = Vector2(379, 192)
 
 [node name="Afghanistan" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(735, 92)
-country_label = "Afghanistan"
 neighbors = Array[int]([35, 21, 15, 6, 36])
 
 [node name="China" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(926, 162)
 country = 6
-country_label = "China"
 neighbors = Array[int]([36, 0, 15, 31, 22, 32])
 
 [node name="India" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(842, 243)
 country = 15
-country_label = "India"
 neighbors = Array[int]([21, 0, 6, 31])
 
 [node name="Irkutsk" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(977, 35)
 country = 17
-country_label = "Irkutsk"
 neighbors = Array[int]([32, 22, 19, 41])
 
 [node name="Japan" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(1123, 154)
 country = 18
-country_label = "Japan"
 neighbors = Array[int]([19, 22])
 
 [node name="Kamchatka" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(1127, -12)
 country = 19
-country_label = "Kamchatka"
 neighbors = Array[int]([1, 41, 17, 22, 18])
 
 [node name="MiddleEast" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(682, 196)
 country = 21
-country_label = "Middle East"
 neighbors = Array[int]([34, 11, 8, 15, 0, 35])
 
 [node name="Mongolia" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(1008, 96)
 country = 22
-country_label = "Mongolia"
 neighbors = Array[int]([32, 6, 18, 17, 19])
 
 [node name="Siam" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(964, 274)
 country = 31
-country_label = "Siam"
 neighbors = Array[int]([15, 6, 16])
 
 [node name="Siberia" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(836, 18)
 country = 32
-country_label = "Siberia"
 neighbors = Array[int]([36, 6, 22, 17, 41])
 
 [node name="Ural" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(733, 10)
 country = 36
-country_label = "Ural"
 neighbors = Array[int]([35, 0, 6, 32])
 
 [node name="Yakutsk" parent="Continents/Asia" instance=ExtResource("2_5rra6")]
 position = Vector2(963, -27)
 country = 41
-country_label = "Yakutsk"
 neighbors = Array[int]([32, 17, 19])
 
 [node name="Australia" type="Node2D" parent="Continents"]
@@ -279,25 +256,21 @@ position = Vector2(379, 192)
 [node name="EasternAustralia" parent="Continents/Australia" instance=ExtResource("2_5rra6")]
 position = Vector2(1183, 545)
 country = 9
-country_label = "Eastern Australia"
 neighbors = Array[int]([38, 23])
 
 [node name="Indonesia" parent="Continents/Australia" instance=ExtResource("2_5rra6")]
 position = Vector2(1055, 401)
 country = 16
-country_label = "Indonesia"
 neighbors = Array[int]([31, 23, 38])
 
 [node name="NewGuinea" parent="Continents/Australia" instance=ExtResource("2_5rra6")]
 position = Vector2(1211, 429)
 country = 23
-country_label = "New Guinea"
 neighbors = Array[int]([16, 9, 38])
 
 [node name="WesternAustralia" parent="Continents/Australia" instance=ExtResource("2_5rra6")]
 position = Vector2(1076, 573)
 country = 38
-country_label = "Western Australia"
 neighbors = Array[int]([16, 9, 23])
 
 [node name="Europe" type="Node2D" parent="Continents"]
@@ -306,100 +279,84 @@ position = Vector2(379, 192)
 [node name="GreatBritain" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(418, 40)
 country = 12
-country_label = "Great Britain"
 neighbors = Array[int]([14, 30, 25, 39])
 
 [node name="Iceland" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(433, -48)
 country = 14
-country_label = "Iceland"
 neighbors = Array[int]([13, 12, 30])
 
 [node name="NorthernEurope" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(501, 54)
 country = 25
-country_label = "Northern Europe"
 neighbors = Array[int]([12, 30, 35, 39, 34])
 
 [node name="Scandinavia" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(517, -4)
 country = 30
-country_label = "Scandinavia"
 neighbors = Array[int]([14, 12, 25, 35])
 
 [node name="SouthernEurope" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(533, 113)
 country = 34
-country_label = "Southern Europe"
 neighbors = Array[int]([39, 25, 35, 21, 11, 24])
 
 [node name="Ukraine" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(612, 40)
 country = 35
-country_label = "Ukraine"
 neighbors = Array[int]([30, 25, 34, 21, 0, 36])
 
 [node name="WesternEurope" parent="Continents/Europe" instance=ExtResource("2_5rra6")]
 position = Vector2(410, 128)
 country = 39
-country_label = "Western Europe"
 neighbors = Array[int]([12, 25, 34, 24])
 
 [node name="NorthAmerica" type="Node2D" parent="Continents"]
 position = Vector2(379, 192)
 
 [node name="Alaska" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
-position = Vector2(-213, -18)
+position = Vector2(-335, -116)
 country = 1
-country_label = "Alaska"
 neighbors = Array[int]([19, 26, 2])
 
 [node name="Alberta" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(-74, 44)
 country = 2
-country_label = "Alberta"
 neighbors = Array[int]([1, 26, 27, 40])
 
 [node name="CentralAmerica" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(-37, 275)
 country = 5
-country_label = "Central America"
 neighbors = Array[int]([40, 10, 37])
 
 [node name="EasternUnitedStates" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(36, 156)
 country = 10
-country_label = "Eastern U.S."
 neighbors = Array[int]([27, 40, 5, 29])
 
 [node name="Greenland" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(272, -47)
 country = 13
-country_label = "Greenland"
 neighbors = Array[int]([26, 27, 29, 14])
 
 [node name="NorthwestTerritory" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(-27, -17)
 country = 26
-country_label = "Northwest Territory"
 neighbors = Array[int]([1, 2, 27, 13])
 
 [node name="Ontario" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(56, 60)
 country = 27
-country_label = "Ontario"
 neighbors = Array[int]([26, 2, 40, 10, 29, 13])
 
 [node name="Quebec" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(165, 50)
 country = 29
-country_label = "Quebec"
 neighbors = Array[int]([27, 10, 13])
 
 [node name="WesternUnitedStates" parent="Continents/NorthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(-71, 124)
 country = 40
-country_label = "Western U.S."
 neighbors = Array[int]([2, 27, 10, 5])
 
 [node name="SouthAmerica" type="Node2D" parent="Continents"]
@@ -408,23 +365,19 @@ position = Vector2(379, 192)
 [node name="Argentina" parent="Continents/SouthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(122, 606)
 country = 3
-country_label = "Argentina"
 neighbors = Array[int]([4, 28])
 
 [node name="Brazil" parent="Continents/SouthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(189, 446)
 country = 4
-country_label = "Brazil"
 neighbors = Array[int]([3, 28, 37, 24])
 
 [node name="Peru" parent="Continents/SouthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(74, 481)
 country = 28
-country_label = "Peru"
 neighbors = Array[int]([4, 37, 3])
 
 [node name="Venezuela" parent="Continents/SouthAmerica" instance=ExtResource("2_5rra6")]
 position = Vector2(102, 349)
 country = 37
-country_label = "Venezuela"
 neighbors = Array[int]([5, 28, 4])

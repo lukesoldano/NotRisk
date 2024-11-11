@@ -57,17 +57,17 @@ func __update_table_values() -> void:
    $NumReinforcementsLabel.text = self.__format_string_to_length(str(self.num_reinforcements), self.__COLUMN_SPACING)
    $NumCardsLabel.text = self.__format_string_to_length(str(self.num_cards), self.__COLUMN_SPACING)
    
-func __format_string_to_length(str: String, length: int) -> String:
+func __format_string_to_length(string: String, length: int) -> String:
    assert(length > 0, "Invalid length provided to PlayerLeaderBoardTableRow::__format_string_to_length")
-   assert(str.length() <= length, "Provided length is less than size of string in PlayerLeaderBoardTableRow::__format_string_to_length")
+   assert(string.length() <= length, "Provided length is less than size of string in PlayerLeaderBoardTableRow::__format_string_to_length")
    
    var prependSpace: bool = true
-   while str.length() < length:
+   while string.length() < length:
       if prependSpace:
-         str = " " + str
+         string = " " + string
       else:
-         str = str + " "
+         string = string + " "
          
       prependSpace = !prependSpace
 
-   return str
+   return string

@@ -88,9 +88,9 @@ var __state_machine_metadata: Dictionary[String, Variant] = {}
 
 func _ready():
    var success: bool = CountrySpriteLoader.load_country_sprites_from_file(
-         "res://Assets/Sprites/GameBoard/Countries_SpriteSheet.png",
-         "res://Assets/Sprites/GameBoard/Countries_SpriteSheet.json",
-         $GameBoard.get_country_label
+         "res://Assets/Sprites/GameBoard/TEST_Countries_SpriteSheet2.png",
+         "res://Assets/Sprites/GameBoard/TEST_Countries_SpriteSheet.json",
+         $GameBoard.get_country_labels()
       )
    assert(success, "Failed to load country sprites from country sprite sheet!")
    
@@ -268,8 +268,8 @@ func __deploy_select_country(country: Types.Country):
 func _on_first_territory_card_toggled(index: int, card: Types.CardType, toggled_on: bool) -> void:
    var ACTIVE_PLAYER_ID = PlayerManager.get_active_player_id()
    
-   assert(index < PlayerManager.get_num_player_cards(PlayerManager.get_active_player_id()), "Invalid index for player's card list!")
-   assert(PlayerManager.get_player_card_at_index(PlayerManager.get_active_player_id(), index) == card, "Card at index does not match card passed in!")
+   assert(index < PlayerManager.get_num_player_cards(ACTIVE_PLAYER_ID), "Invalid index for player's card list!")
+   assert(PlayerManager.get_player_card_at_index(ACTIVE_PLAYER_ID, index) == card, "Card at index does not match card passed in!")
 
    if toggled_on:
       var selected_indices: Array[int] = [index]
@@ -492,8 +492,7 @@ func _on_attack_state_entered() -> void:
    self.turn_phase_updated.emit(self.__active_turn_phase)
    
 func _on_attack_state_exited():
-   if PlayerManager.is_local_player_active():
-      $GameBoardHUD.remove_player_selection_line()
+   pass
    
 ## Attack (Idle) Subphase ############################################################################################## Attack (Idle) Subphase
 func _on_attack_idle_state_entered() -> void:
@@ -503,7 +502,6 @@ func _on_attack_idle_state_entered() -> void:
                      
    if PlayerManager.is_local_player_active():
       $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
-      $GameBoardHUD.remove_player_selection_line()
       
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = PlayerManager.get_active_player()
@@ -554,7 +552,6 @@ func _on_attack_source_selected_state_entered() -> void:
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    
    if PlayerManager.is_local_player_active():
-      $GameBoardHUD.set_player_selection_line_origin($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]), true)
       $GameBoard.connect("country_clicked", self._on_attack_source_selected_country_clicked)
       
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
@@ -623,7 +620,6 @@ func _on_attack_destination_selected_state_entered() -> void:
    var DEFENDING_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
    
    if PlayerManager.is_local_player_active():       
-      $GameBoardHUD.set_player_selection_line_destination($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]))
       $GameBoardHUD.connect("attack_quit_requested", self._on_attack_destination_selected_quit_requested)
       $GameBoardHUD.connect("attack_roll_requested", self._on_attack_destination_selected_roll_requested)
       $GameBoardHUD.connect("attack_die_count_change_requested", self._on_attack_destination_selected_die_count_change_requested)
@@ -820,8 +816,7 @@ func _on_attack_victory_state_entered() -> void:
          $GameBoardHUD.connect("troop_movement_troop_count_change_requested", self._on_attack_victory_troop_count_change_requested)
          $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_attack_victory_troop_movement_confirm_requested)
          
-      $GameBoardHUD.show_troop_movement_popup($GameBoard.state_manager,
-                                              TroopMovementType.POST_VICTORY,
+      $GameBoardHUD.show_troop_movement_popup(TroopMovementType.POST_VICTORY,
                                               ATTACKING_COUNTRY, 
                                               DEFENDING_COUNTRY, 
                                               NUM_ATTACKER_DICE,
@@ -864,8 +859,7 @@ func _on_attack_victory_troop_count_change_requested(old_troop_count: int, new_t
       
    self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = new_troop_count
    
-   $GameBoardHUD.show_troop_movement_popup($GameBoard.state_manager,
-                                           TroopMovementType.POST_VICTORY,
+   $GameBoardHUD.show_troop_movement_popup(TroopMovementType.POST_VICTORY,
                                            ATTACKING_COUNTRY, 
                                            DEFENDING_COUNTRY, 
                                            new_troop_count,
@@ -952,8 +946,7 @@ func _on_reinforce_state_entered() -> void:
    self.turn_phase_updated.emit(self.__active_turn_phase)
    
 func _on_reinforce_state_exited():
-   if PlayerManager.is_local_player_active():
-      $GameBoardHUD.remove_player_selection_line()
+   pass
    
 ## Reinforce (Idle) Subphase ########################################################################################### Reinforce (Idle) Subphase
 func _on_reinforce_idle_state_entered() -> void:
@@ -1007,7 +1000,6 @@ func _on_reinforce_source_selected_state_entered() -> void:
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
                      
    if PlayerManager.is_local_player_active():
-      $GameBoardHUD.set_player_selection_line_origin($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]), true)
       $GameBoard.connect("country_clicked", self._on_reinforce_destination_country_clicked)
       
 func _on_reinforce_source_selected_state_exited() -> void:
@@ -1064,12 +1056,10 @@ func _on_reinforce_destination_selected_state_entered() -> void:
    self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = SRC_COUNTRY_TROOPS - 1
   
    if PlayerManager.is_local_player_active():
-      $GameBoardHUD.set_player_selection_line_destination($GameBoard.get_country_global_position(self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]))
       $GameBoardHUD.connect("troop_movement_troop_count_change_requested", self._on_reinforce_troop_count_change_requested)
       $GameBoardHUD.connect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
       
-   $GameBoardHUD.show_troop_movement_popup($GameBoard.state_manager,
-                                           TroopMovementType.REINFORCE,
+   $GameBoardHUD.show_troop_movement_popup(TroopMovementType.REINFORCE,
                                            SRC_COUNTRY, 
                                            DEST_COUNTRY, 
                                            self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY],
@@ -1080,7 +1070,6 @@ func _on_reinforce_destination_selected_state_exited() -> void:
    if PlayerManager.is_local_player_active():
       $GameBoardHUD.disconnect("troop_movement_troop_count_change_requested", self._on_reinforce_troop_count_change_requested)
       $GameBoardHUD.disconnect("troop_movement_confirm_requested", self._on_reinforce_troop_movement_confirm_requested)
-      $GameBoardHUD.remove_player_selection_line()
       
    $GameBoardHUD.hide_troop_movement_popup()
    
@@ -1109,8 +1098,7 @@ func _on_reinforce_troop_count_change_requested(old_troop_count: int, new_troop_
       
    self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY] = new_troop_count
    
-   $GameBoardHUD.show_troop_movement_popup($GameBoard.state_manager,
-                                           TroopMovementType.REINFORCE,
+   $GameBoardHUD.show_troop_movement_popup(TroopMovementType.REINFORCE,
                                            SRC_COUNTRY, 
                                            DEST_COUNTRY, 
                                            new_troop_count,

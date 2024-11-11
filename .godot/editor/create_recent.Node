@@ -1,6 +1,9 @@
-Line2D
 TextureButton
 TextureRect
+Button
+Sprite2D
+CanvasLayer
+Line2D
 Control
 MarginContainer
 VSeparator
@@ -9,7 +12,3 @@ HSeparator
 VBoxContainer
 Label
 ColorRect
-StateChart
-Timer
-CanvasLayer
-Button
