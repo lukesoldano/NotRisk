@@ -185,11 +185,10 @@ func _on_next_phase_requested() -> void:
 ## Start Phase ######################################################################################################### Start Phase
 func _on_start_state_entered() -> void:
    self.__active_turn_phase = TurnPhase.START
+   self.__log_phase_entered()
    
    # CLEAR ALL METADATA as we are entering a new player's turn
    self.__state_machine_metadata.clear()
-   
-   self.__log_phase_entered()
    
    self.turn_phase_updated.emit(self.__active_turn_phase)
    $PlayerTurnStateMachine.send_event("StartToDeploy")
@@ -197,9 +196,9 @@ func _on_start_state_entered() -> void:
 ## Deploy Phase ######################################################################################################## Deploy Phase
 func _on_deploy_state_entered() -> void:
    self.__active_turn_phase = TurnPhase.DEPLOY
-   self.__clear_interphase_state_machine_metadata()
-   
    self.__log_phase_entered()
+   
+   self.__clear_interphase_state_machine_metadata()
                      
    self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY] = Utilities.get_num_reinforcements_earned($GameBoard.CONTINENTS, 
                                                                                                                 $GameBoard.CONTINENT_BONUSES, 
@@ -240,8 +239,8 @@ func _on_deploy_idle_state_exited() -> void:
       $GameBoardHUD.disconnect("territory_card_toggled", self._on_first_territory_card_toggled)
       $GameBoard.disconnect("country_clicked", self._on_deploy_idle_country_clicked)
       
-func _on_deploy_idle_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_deploy_idle_country_clicked( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
+func _on_deploy_idle_country_clicked(country: Types.Country) -> void:
+   Logger.log_message("_on_deploy_idle_country_clicked( " + $GameBoard.get_country_label(country) + " )")
    self.__deploy_select_country(country)
    
 func __deploy_select_country(country: Types.Country):
@@ -283,7 +282,7 @@ func _on_deploy_deploying_state_entered() -> void:
    assert(self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY), "Deploy country not set previously!")
    assert(self.__state_machine_metadata.has(self.__REINFORCEMENTS_REMAINING_KEY), "Deploy reinforcements not set previously!")
    
-   var DEPLOY_COUNTRY: Types.Country = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
+   var DEPLOY_COUNTRY: int = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
    var REINFORCEMENTS_REMAINING: int = self.__state_machine_metadata[self.__REINFORCEMENTS_REMAINING_KEY]
                     
    if PlayerManager.is_local_player_active():
@@ -294,6 +293,7 @@ func _on_deploy_deploying_state_entered() -> void:
       
    self.__state_machine_metadata[self.__NUM_UNITS_KEY] = REINFORCEMENTS_REMAINING
       
+   $GameBoard.highlight_country(DEPLOY_COUNTRY, Color.GRAY)
    $GameBoardHUD.show_deploy_popup(DEPLOY_COUNTRY, REINFORCEMENTS_REMAINING, REINFORCEMENTS_REMAINING)
                                  
    # If player is being controlled by AI, tell AI to make a move
@@ -302,7 +302,9 @@ func _on_deploy_deploying_state_entered() -> void:
       player.player_controller.handle_deploy_state_deploying(self.__deploy_set_troop_count_and_confirm, DEPLOY_COUNTRY)
 
 func _on_deploy_deploying_state_exited() -> void:
+   var DEPLOY_COUNTRY: int = Constants.INVALID_ID
    if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
+      DEPLOY_COUNTRY = self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY]
       self.__state_machine_metadata.erase(self.__DESTINATION_COUNTRY_KEY)
       
    if self.__state_machine_metadata.has(self.__NUM_UNITS_KEY):
@@ -314,6 +316,9 @@ func _on_deploy_deploying_state_exited() -> void:
       $GameBoardHUD.disconnect("deploy_troop_count_change_requested", self._on_deploy_troop_count_change_requested)
       
    $GameBoardHUD.hide_deploy_popup()
+   
+   # Remove any prior highlighting
+   $GameBoard.highlight_country(DEPLOY_COUNTRY, Color.WHITE)
    
 func _on_deploy_deploying_state_input(event: InputEvent) -> void:
    if PlayerManager.is_local_player_active() and event.is_action_pressed(UserInput.RIGHT_CLICK_ACTION_TAG):
@@ -485,9 +490,9 @@ func _on_deploy_playing_cards_territory_card_toggled(index: int, _card: Types.Ca
 ## Attack Phase ######################################################################################################## Attack Phase
 func _on_attack_state_entered() -> void:
    self.__active_turn_phase = TurnPhase.ATTACK
-   self.__clear_interphase_state_machine_metadata()
-   
    self.__log_phase_entered()
+   
+   self.__clear_interphase_state_machine_metadata()
    
    self.turn_phase_updated.emit(self.__active_turn_phase)
    
@@ -496,9 +501,16 @@ func _on_attack_state_exited():
    
 ## Attack (Idle) Subphase ############################################################################################## Attack (Idle) Subphase
 func _on_attack_idle_state_entered() -> void:
-   self.__clear_interphase_state_machine_metadata()
-   
    self.__log_subphase_entered(AttackTurnSubPhase.keys()[AttackTurnSubPhase.IDLE])
+   
+   # If any highlighting colors were set, remove them
+   if self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY):
+      $GameBoard.highlight_country(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY], Color.WHITE)
+      
+   if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
+      $GameBoard.highlight_country(self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY], Color.WHITE)
+   
+   self.__clear_interphase_state_machine_metadata()
                      
    if PlayerManager.is_local_player_active():
       $GameBoard.connect("country_clicked", self._on_attack_source_country_clicked)
@@ -515,8 +527,8 @@ func _on_attack_idle_state_exited() -> void:
    if PlayerManager.is_local_player_active():
       $GameBoard.disconnect("country_clicked", self._on_attack_source_country_clicked)
    
-func _on_attack_source_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_attack_source_country_selected( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
+func _on_attack_source_country_clicked(country: Types.Country) -> void:
+   Logger.log_message("_on_attack_source_country_selected( " + $GameBoard.get_country_label(country) + " )")
    
    if !PlayerManager.is_local_player_active():
       Logger.log_error("AttackIdle: Local player selected country, but it is not their turn")
@@ -561,6 +573,8 @@ func _on_attack_source_selected_state_entered() -> void:
                                                                    $GameBoard.get_countries_that_neighbor, 
                                                                    self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY],
                                                                    $GameBoard.state_manager)
+                                                                  
+   $GameBoard.highlight_country(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY], Color.GRAY)
 
 func _on_attack_source_selected_state_exited() -> void:
    if PlayerManager.is_local_player_active():
@@ -571,8 +585,8 @@ func _on_attack_source_selected_state_input(event: InputEvent) -> void:
       if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
          $PlayerTurnStateMachine.send_event("SourceSelectedToIdle")
    
-func _on_attack_source_selected_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_attack_destination_country_selected( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
+func _on_attack_source_selected_country_clicked(country: Types.Country) -> void:
+   Logger.log_message("_on_attack_destination_country_selected( " + $GameBoard.get_country_label(country) + " )")
    
    if !PlayerManager.is_local_player_active():
       Logger.log_error("AttackSourceSelected: Local player selected country, but it is not their turn")
@@ -640,6 +654,8 @@ func _on_attack_destination_selected_state_entered() -> void:
                                    self.__state_machine_metadata[self.__NUM_ATTACKER_DICE_KEY],
                                    max_attacker_die_count, 
                                    self.__state_machine_metadata[self.__NUM_DEFENDER_DICE_KEY])
+                                 
+   $GameBoard.highlight_country(DEFENDING_COUNTRY, Color.GRAY)
                                  
    # If player is being controlled by AI, tell AI to make a move, if AI has no moves remaining, move to the next phase
    var player = PlayerManager.get_active_player()
@@ -937,11 +953,11 @@ func _on_attack_opponent_knocked_out_state_entered() -> void:
 ## Reinforce Phase ##################################################################################################### Reinforce Phase
 func _on_reinforce_state_entered() -> void:
    self.__active_turn_phase = TurnPhase.REINFORCE
+   self.__log_phase_entered()
+   
    self.__clear_interphase_state_machine_metadata()
    
    self.__state_machine_metadata[self.__NUM_REINFORCE_MOVEMENTS_UTILIZED] = 0
-   
-   self.__log_phase_entered()
    
    self.turn_phase_updated.emit(self.__active_turn_phase)
    
@@ -951,6 +967,13 @@ func _on_reinforce_state_exited():
 ## Reinforce (Idle) Subphase ########################################################################################### Reinforce (Idle) Subphase
 func _on_reinforce_idle_state_entered() -> void:
    self.__log_subphase_entered(ReinforceTurnSubPhase.keys()[ReinforceTurnSubPhase.IDLE])
+   
+    # If any highlighting colors were set, remove them
+   if self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY):
+      $GameBoard.highlight_country(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY], Color.WHITE)
+      
+   if self.__state_machine_metadata.has(self.__DESTINATION_COUNTRY_KEY):
+      $GameBoard.highlight_country(self.__state_machine_metadata[self.__DESTINATION_COUNTRY_KEY], Color.WHITE)
                      
    if PlayerManager.is_local_player_active():
       $GameBoard.connect("country_clicked", self._on_reinforce_source_country_clicked)
@@ -965,8 +988,8 @@ func _on_reinforce_idle_state_exited() -> void:
    if PlayerManager.is_local_player_active():
       $GameBoard.disconnect("country_clicked", self._on_reinforce_source_country_clicked)
       
-func _on_reinforce_source_country_clicked(country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_reinforce_source_country_clicked( " + $GameBoard.get_country_label(country) + ", " + action_tag + " )")
+func _on_reinforce_source_country_clicked(country: Types.Country) -> void:
+   Logger.log_message("_on_reinforce_source_country_clicked( " + $GameBoard.get_country_label(country) + " )")
    
    assert(self.__state_machine_metadata.has(self.__NUM_REINFORCE_MOVEMENTS_UTILIZED), "Num reinforce movements not set previously")
    
@@ -1002,6 +1025,8 @@ func _on_reinforce_source_selected_state_entered() -> void:
    if PlayerManager.is_local_player_active():
       $GameBoard.connect("country_clicked", self._on_reinforce_destination_country_clicked)
       
+   $GameBoard.highlight_country(self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY], Color.GRAY)
+      
 func _on_reinforce_source_selected_state_exited() -> void:
    if PlayerManager.is_local_player_active():
       $GameBoard.disconnect("country_clicked", self._on_reinforce_destination_country_clicked)
@@ -1011,8 +1036,8 @@ func _on_reinforce_source_selected_state_input(event: InputEvent) -> void:
       if UserInput.ActionTagToInputAction[UserInput.RIGHT_CLICK_ACTION_TAG] == UserInput.InputAction.CANCEL:
          $PlayerTurnStateMachine.send_event("SourceSelectedToIdle")
       
-func _on_reinforce_destination_country_clicked(dest_country: Types.Country, action_tag: String) -> void:
-   Logger.log_message("_on_reinforce_source_country_clicked( " + Types.Country.keys()[dest_country] + ", " + action_tag + " )")
+func _on_reinforce_destination_country_clicked(dest_country: Types.Country) -> void:
+   Logger.log_message("_on_reinforce_source_country_clicked( " + Types.Country.keys()[dest_country] + " )")
    
    assert(self.__state_machine_metadata.has(self.__SOURCE_COUNTRY_KEY), "Source country not set previously!")
    var SRC_COUNTRY: Types.Country = self.__state_machine_metadata[self.__SOURCE_COUNTRY_KEY]
@@ -1065,6 +1090,8 @@ func _on_reinforce_destination_selected_state_entered() -> void:
                                            self.__state_machine_metadata[self.__NUM_TROOPS_TO_MOVE_KEY],
                                            1,
                                            SRC_COUNTRY_TROOPS - 1)
+                                          
+   $GameBoard.highlight_country(DEST_COUNTRY, Color.GRAY)
 
 func _on_reinforce_destination_selected_state_exited() -> void:
    if PlayerManager.is_local_player_active():
@@ -1125,9 +1152,9 @@ func _on_reinforce_troop_movement_confirm_requested() -> void:
 ## End Phase ########################################################################################################### End Phase
 func _on_end_state_entered() -> void:
    self.__active_turn_phase = TurnPhase.END
-   self.__clear_interphase_state_machine_metadata()
-   
    self.__log_phase_entered()
+   
+   self.__clear_interphase_state_machine_metadata()
    
    self.turn_phase_updated.emit(self.__active_turn_phase)
    

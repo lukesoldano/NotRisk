@@ -14,7 +14,7 @@ class_name GameBoard
 ########################################################################################################################
 
 # TODO: Change this to use int for country_id instead of enum
-signal country_clicked(country: Types.Country, action_tag: String)
+signal country_clicked(country: Types.Country)
 
 const CONTINENTS: Dictionary[Types.Continent, Array] = {
    Types.Continent.AFRICA: [Types.Country.CONGO, Types.Country.EAST_AFRICA, Types.Country.EGYPT, Types.Country.MADAGASCAR, Types.Country.NORTH_AFRICA, Types.Country.SOUTH_AFRICA],
@@ -172,14 +172,17 @@ func populate_country_sprites() -> bool:
    return true
       
 func _on_country_occupation_updated(country_id: int, _old_deployment: Types.Deployment, new_deployment: Types.Deployment) -> void:
+   assert(country_id != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::_on_country_occupation_updated()")
    assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::_on_country_occupation_updated()")
    self.__country_node_map[country_id].set_deployment(new_deployment)
    
 func get_country_global_position(country_id: int) -> Vector2:
+   assert(country_id != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::get_country_global_position()")
    assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::get_country_global_position()")
    return self.__country_node_map[country_id].get_node("OccupationWidget").get_global_position()
    
 func get_country_label(country_id: int) -> String:
+   assert(country_id != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::get_country_label()")
    assert(self.__country_label_map.has(country_id), "Invalid country")
    if self.__country_label_map.has(country_id):
       return self.__country_label_map[country_id]
@@ -189,10 +192,13 @@ func get_country_labels() -> Dictionary[int, String]:
    return self.__country_label_map
    
 func get_countries_that_neighbor(country_id: int) -> Array:
+   assert(country_id != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::get_countries_that_neighbor()")
    assert(self.__country_node_map.has(country_id), "Invalid country")
    return self.__country_node_map[country_id].neighbors
    
 func countries_are_neighbors(country_id1: int, country_id2: int) -> bool:
+   assert(country_id1 != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::countries_are_neighbors()")
+   assert(country_id2 != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::countries_are_neighbors()")
    if self.__country_node_map.has(country_id1) != true or self.__country_node_map.has(country_id2) != true:
       assert(self.__country_node_map.has(country_id1), "Invalid country_id1")
       assert(self.__country_node_map.has(country_id2), "Invalid country_id2")
@@ -202,6 +208,8 @@ func countries_are_neighbors(country_id1: int, country_id2: int) -> bool:
    
 # Perform a breadth first search to find if the destination country is connected to the source country via player occupations
 func countries_connected_via_player_occupations(player_id: int, source_country_id: int, destination_country_id: int) -> bool:
+   assert(source_country_id != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::countries_connected_via_player_occupations()")
+   assert(destination_country_id != Constants.INVALID_ID, "Country id was set to INVALID_ID in GameBoard::countries_connected_via_player_occupations()")
    if source_country_id == destination_country_id:
       return true
       
@@ -257,6 +265,11 @@ func __dfs_country_connection_via_player_occupations(player_id: int,
          countries_already_checked.append(neighbor_id)
    
    return self.__dfs_country_connection_via_player_occupations(player_id, destination_country_id, countries_to_check, countries_already_checked)
+   
+# Highlighting a country white is the equivalent of removing a highlight
+func highlight_country(country_id: int, color: Color) -> void:
+   assert(self.__country_node_map.has(country_id), "Invalid country provided to GameBoard::highlight_country()")
+   self.__country_node_map[country_id].set_highlight_color(color)
 
 func __validate_borders(): 
    for country in self.__country_node_map:
@@ -265,5 +278,5 @@ func __validate_borders():
          assert(self.__country_node_map.has(neighbor), "Neighbor is not in node map!")
          assert(self.__country_node_map[neighbor].neighbors.count(country) != 0, "Neighbor does not have country as one if its neighbors!")
    
-func _on_country_clicked(country: Types.Country, action_tag: String) -> void:
-   self.country_clicked.emit(country, action_tag)
+func _on_country_clicked(country: Types.Country) -> void:
+   self.country_clicked.emit(country)
